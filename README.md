@@ -4,4 +4,4 @@ Discord bot that scrapes jobs data to help students identify internship oppurtun
 <hr>
 
 ### Team Members :  
-* Akrash Sharma
+* [Akrash Sharma](https://github.com/Akarsh654/)
