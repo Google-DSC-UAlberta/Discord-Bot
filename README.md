@@ -12,3 +12,4 @@ Discord bot that scrapes jobs data to help students identify internship oppurtun
 * [Chee Tey](https://github.com/cheetiantey)
 * [Paul Bakshi](https://github.com/AinJex)
 * [Faiyad Rahman](https://github.com/FaiyadRahman)
+* [Kelly Shih](https://github.com/kelly-shih/)
