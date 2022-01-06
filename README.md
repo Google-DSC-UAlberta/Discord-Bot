@@ -9,3 +9,4 @@ Discord bot that scrapes jobs data to help students identify internship oppurtun
 * [Marcus Kim](https://github.com/MarcusKim442)
 * [Joshua George](https://github.com/joshuahey)
 * [Pratham Arora](https://github.com/PrathamArora20)
+* [Chee Tey](https://github.com/cheetiantey)
