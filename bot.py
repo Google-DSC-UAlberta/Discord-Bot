@@ -5,6 +5,8 @@ import discord
 
 import time
 import asyncio
+import json
+import random
 from dotenv import load_dotenv
 
 # load the envionment variables from .env file
@@ -22,6 +24,9 @@ class DemoClient(discord.Client):
             "test": "Welcome to UofA GDSC!",
             "code": "```python\n print('showing how python snippets can be displayed on Discord!')```"
         }
+        with open('./greetings.json', 'r') as f:
+            global greetings
+            greetings = json.load(f)
 
     async def on_ready(self):
         print(f'{client.user} has connected to Discord!')
@@ -52,8 +57,8 @@ class DemoClient(discord.Client):
                 self.timer_flag = False
             else:
                 await message.reply("Timer is not started! Enter \"timer\" to start a timer")
-        elif content == "hello":
-            await message.reply("Hello there!")
+        elif content == "Hello":
+            await message.reply(random.choices(greetings['Hello'])[0])
 
 client = DemoClient()
 client.run(TOKEN)
