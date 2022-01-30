@@ -57,8 +57,10 @@ class DemoClient(discord.Client):
                 self.timer_flag = False
             else:
                 await message.reply("Timer is not started! Enter \"timer\" to start a timer")
-        elif content == "Hello":
+        elif content.lower() == "hello":
             await message.reply(random.choices(greetings['Hello'])[0])
+        elif content.lower() == "bye" or content.lower() == "goodbye": 
+            await message.reply(random.choices(greetings['Bye'])[0])
 
 client = DemoClient()
 client.run(TOKEN)

@@ -1,3 +1,4 @@
 {
-    "Hello": ["Hello!", "Hey there!", "Hi there!", "It's a pleasure to meet you!", "Welcome to GDSC!"]
+    "Hello": ["Hello!", "Hey there!", "Hi there!", "It's a pleasure to meet you!", "Welcome to GDSC!"],
+    "Bye": ["Bye!", "See you later!", "Goodbye!", "Have a nice day!"]
 }
