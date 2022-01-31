@@ -21,18 +21,18 @@ def html_code(url):
     # return html code
     return (soup)
 
+# get job title
+def job_title(soup, page):
+    # find all tags with job titles
+    parent = soup.find("div", class_ = "mosaic-zone", id  = "mosaic-zone-jobcards")
+    children = parent.findChildren("h2", class_ = ["jobTitle", "jobTitle jobTitle-newJob"])
 
-# filter job data using
-# find_all function
-def job_data(soup):
-    # find the Html tag
-    # with find()
-    # and convert into string
-    data_str = ""
-    for item in soup.find_all("span", class_="jobtitle turnstileLink"):
-        data_str = data_str + item.get_text()
-    result_1 = data_str.split("\n")
-    return (result_1)
+    # get the text from each job title tag
+    for i in range(len(children)):
+        children[i] = str(page) + " " + children[i].text
+    
+    # return list of all job titles in a page
+    return children
 
 
 # filter company_data using
@@ -60,27 +60,39 @@ def company_data(soup):
 if __name__ == "__main__":
 
     # Data for URL
-    job = "software%20engineer%20intern"
-    Location = "Canada&vjk="
-    url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + Location
+    job = "software%20developer"
+    location = "edmonton"
+    page = 0    
 
-    # Pass this URL into the soup
-    # which will return
-    # html string
-    soup = html_code(url)
+
+    jobs_list = []
+    while True:
+        # change 'start' every iteration to go to next page
+        url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)
+        # get html string 
+        soup = html_code(url)
+        # append list of jobs per page to jobs_list
+        jobs_list.append(job_title(soup, page))
+        page = page + 10
+
+        # get info from the first 5 pages
+        if page == 50:
+            break  
+        
+    print(jobs_list)
 
     # call job and company data
     # and store into it var
-    job_res = job_data(soup)
-    com_res = company_data(soup)
+
+#    com_res = company_data(soup)
 
     # Traverse the both data
-    temp = 0
-    for i in range(1, len(job_res)):
-        j = temp
-        for j in range(temp, 2 + temp):
-            print("Company Name and Address : " + com_res[j])
+    # temp = 0
+    # for i in range(1, len(job_res)):
+    #     j = temp
+    #     for j in range(temp, 2 + temp):
+    #         print("Company Name and Address : " + com_res[j])
 
-        temp = j
-        print("Job : " + job_res[i])
-        print("-----------------------------")
+    #     temp = j
+    #     print("Job : " + job_res[i])
+    #     print("-----------------------------")
