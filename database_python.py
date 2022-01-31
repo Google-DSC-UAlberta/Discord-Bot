@@ -12,6 +12,7 @@ cur=connection.cursor()
 # 2) PASSWORD (encrypted)
 # 3) NOTIF_INTERVAL
 # 4) JOB_KEY
+# 5) LOCATION
 
 #cur.execute('''CREATE TABLE if not exists sorted_data ( key_word text, type text, often_update INTEGER)''')   
 cur.execute('''DROP TABLE IF EXISTS USER''')   
@@ -21,7 +22,8 @@ u_table = '''CREATE TABLE USER(
     USERNAME CHAR(40) PRIMARY KEY,
     PASSWORD CHAR(40),  
     NOTIF_INTERVAL INT,
-    JOB_KEY CHAR(40)
+    JOB_KEY CHAR(40),
+    LOCATION CHAR(50)
 );'''
 
 #password and job keywords is char for now at least because idk what they should be
