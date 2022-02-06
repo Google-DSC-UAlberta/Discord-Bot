@@ -8,6 +8,7 @@ import asyncio
 import json
 import random
 from dotenv import load_dotenv
+from Database import Database
 
 # load the envionment variables from .env file
 load_dotenv()
@@ -27,6 +28,8 @@ class DemoClient(discord.Client):
         with open('./greetings.json', 'r') as f:
             global greetings
             greetings = json.load(f)
+        global db
+        db = Database()
 
     async def on_ready(self):
         print(f'{client.user} has connected to Discord!')
@@ -61,6 +64,8 @@ class DemoClient(discord.Client):
             await message.reply(random.choices(greetings['Hello'])[0])
         elif content.lower() == "bye" or content.lower() == "goodbye": 
             await message.reply(random.choices(greetings['Bye'])[0])
+        elif content == "db":
+            await message.reply(db.check_if_user_exist(message.author.id))
 
 client = DemoClient()
 client.run(TOKEN)
