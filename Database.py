@@ -63,7 +63,18 @@ class Database(Singleton):
         self.cursor.execute("SELECT * FROM users WHERE user_id=:uid", {"uid": user_id})
         result = self.cursor.fetchall()
         return len(result) > 0
-
+    
+    def add_user(self, user_id, notify_interval, job_key, location):
+        """
+        Add a user to the database
+        Args:
+            user_id: the user's Discord id
+            notify_interval: the user's notification interval
+            job_key: the user's job keyword
+            location: the user's location
+        """
+        self.cursor.execute("INSERT INTO users VALUES (:uid, :ni, :jk, :l)", {"uid": user_id, "ni": notify_interval, "jk": job_key, "l": location})
+        self.connection.commit()
 
 if __name__ == "__main__":
     # a simple test on the Singleton pattern
