@@ -10,7 +10,6 @@ def getdata(url):
     r = requests.get(url)
     return r.text
 
-
 # Get Html code using parse
 def html_code(url):
     # pass the url
@@ -21,39 +20,53 @@ def html_code(url):
     # return html code
     return (soup)
 
-# get job title
+# return job titles
 def job_title(soup, page):
     # find all tags with job titles
     parent = soup.find("div", class_ = "mosaic-zone", id  = "mosaic-zone-jobcards")
-    children = parent.findChildren("h2", class_ = ["jobTitle", "jobTitle jobTitle-newJob"])
+    titles = parent.findChildren("h2", class_ = ["jobTitle", "jobTitle jobTitle-newJob"])
 
     # get the text from each job title tag
-    for i in range(len(children)):
-        children[i] = str(page) + " " + children[i].text
+    for i in range(len(titles)):
+        titles[i] = "page " + str(page),i, " " + titles[i].text
     
-    # return list of all job titles in a page
-    return children
+    return titles
 
-
-# filter company_data using
-# find_all function
-
-
-def company_data(soup,page):
+# return company names
+def company_names(soup,page):
     # find the Html tag
     # with find()
     # and convert into string
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
-    children = parent.findChildren("div", class_=["company_location", "company_Info"])
+    names = parent.findChildren("span", class_=["companyName"])
 
-    # get the text from each job title tag
-    for i in range(len(children)):
-        children[i] = str(page) + " " + children[i].text
+    for i in range(len(names)):
+        names[i] = "page " + str(page),i, " " + names[i].text
+        
+    return names
 
+# return company locations
+def company_locations(soup,page):
+    # find the Html tag
+    # with find()
+    # and convert into string
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    locations = parent.findChildren("div", class_="companyLocation")
 
-    return children
+    for i in range(len(locations)):
+        locations[i] = "page " + str(page), i, locations[i].text
+        
+    return locations
 
+# return company urls  
+def company_urls(soup,page):
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    tags = parent.findChildren("a", href = True, id = True)
+    
+    for link in tags:
+        urls.append("https://ca.indeed.com" + link["href"])
 
+    return urls
 
 # driver nodes/main function
 if __name__ == "__main__":
@@ -63,38 +76,32 @@ if __name__ == "__main__":
     location = "edmonton"
     page = 0    
 
-
-    jobs_list = []
-    company_list = []
+    jobtitles = []
+    names_company = []
+    locations_company = []
+    urls = []
+    
     while True:
         # change 'start' every iteration to go to next page
-        url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)
+        url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)       
         # get html string 
         soup = html_code(url)
-        # append list of jobs per page to jobs_list
-        jobs_list.append(job_title(soup, page))
-        company_list.append(company_data(soup,page))
-        page = page + 10
 
+        # get information on jobs and companies
+        jobtitles.append(job_title(soup, page))
+        names_company.append(company_names(soup,page))
+        locations_company.append(company_locations(soup,page))
+        urls.append(company_urls(soup,page))
+        
+        page = page + 10
         # get info from the first 5 pages
         if page == 50:
             break  
         
-    print(jobs_list)
-    print(company_list)
-
-    # call job and company data
-    # and store into it var
-
-#    com_res = company_data(soup)
-
-    # Traverse the both data
-    # temp = 0
-    # for i in range(1, len(job_res)):
-    #     j = temp
-    #     for j in range(temp, 2 + temp):
-    #         print("Company Name and Address : " + com_res[j])
-
-    #     temp = j
-    #     print("Job : " + job_res[i])
-    #     print("-----------------------------")
+    print(jobtitles)
+    print("\n" * 2)
+    print(names_company)
+    print("\n" * 2)
+    print(locations_company)
+    print("\n" * 2)
+    print(urls)
