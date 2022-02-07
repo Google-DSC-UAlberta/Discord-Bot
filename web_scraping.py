@@ -60,6 +60,7 @@ def company_locations(soup,page):
 
 # return company urls  
 def company_urls(soup,page):
+    urls = []
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
     tags = parent.findChildren("a", href = True, id = True)
     
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     jobtitles = []
     names_company = []
     locations_company = []
-    urls = []
+    job_urls = []
     
     while True:
         # change 'start' every iteration to go to next page
@@ -91,7 +92,7 @@ if __name__ == "__main__":
         jobtitles.append(job_title(soup, page))
         names_company.append(company_names(soup,page))
         locations_company.append(company_locations(soup,page))
-        urls.append(company_urls(soup,page))
+        job_urls.append(company_urls(soup,page))
         
         page = page + 10
         # get info from the first 5 pages
@@ -104,4 +105,4 @@ if __name__ == "__main__":
     print("\n" * 2)
     print(locations_company)
     print("\n" * 2)
-    print(urls)
+    print(job_urls)
