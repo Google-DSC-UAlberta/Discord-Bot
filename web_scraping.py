@@ -1,6 +1,7 @@
 # import module
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
 
 
 # user define function
@@ -28,7 +29,7 @@ def job_title(soup, page):
 
     # get the text from each job title tag
     for i in range(len(titles)):
-        titles[i] = "page " + str(page),i, " " + titles[i].text
+        titles[i] = titles[i].text
     
     return titles
 
@@ -41,7 +42,7 @@ def company_names(soup,page):
     names = parent.findChildren("span", class_=["companyName"])
 
     for i in range(len(names)):
-        names[i] = "page " + str(page),i, " " + names[i].text
+        names[i] = names[i].text
         
     return names
 
@@ -54,7 +55,7 @@ def company_locations(soup,page):
     locations = parent.findChildren("div", class_="companyLocation")
 
     for i in range(len(locations)):
-        locations[i] = "page " + str(page), i, locations[i].text
+        locations[i] = locations[i].text
         
     return locations
 
@@ -89,20 +90,21 @@ if __name__ == "__main__":
         soup = html_code(url)
 
         # get information on jobs and companies
-        jobtitles.append(job_title(soup, page))
-        names_company.append(company_names(soup,page))
-        locations_company.append(company_locations(soup,page))
-        job_urls.append(company_urls(soup,page))
+        jobtitles += job_title(soup, page)
+        names_company += company_names(soup,page)
+        locations_company += company_locations(soup,page)
+        job_urls += company_urls(soup,page)
         
         page = page + 10
         # get info from the first 5 pages
         if page == 50:
             break  
         
-    print(jobtitles)
-    print("\n" * 2)
-    print(names_company)
-    print("\n" * 2)
-    print(locations_company)
-    print("\n" * 2)
-    print(job_urls)
+    # creating a dataframe with all the information 
+    df = pd.DataFrame()
+    df['Title'] = jobtitles
+    df['Company'] = names_company
+    df['Location'] = locations_company
+    df['URL'] = job_urls
+
+    print(df)
