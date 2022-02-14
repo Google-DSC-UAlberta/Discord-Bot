@@ -40,6 +40,22 @@ class Database(Singleton):
             location TEXT, 
             url TEXT
         );
+        
+        CREATE TABLE IF NOT EXISTS user_job (
+            job_name CHAR(40),     
+            FOREIGN KEY (user_id)
+            REFERENCES users(user_id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS user_location (
+            location CHAR(40),
+            FOREIGN KEY (user_id)
+            REFERENCES users(user_id)
+        );
+        
+        
+        
+        
         ''')
 
         self.connection.commit()
