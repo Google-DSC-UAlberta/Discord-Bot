@@ -82,6 +82,21 @@ class Database(Singleton):
         result = self.cursor.fetchall()
         return len(result) > 0
     
+    def get_location(self, user_id):
+        """
+        Checks for the location of the user
+        Args:
+            user_id: the user's Discord id
+        Returns: 
+            The location 
+        
+        """
+        
+        self.cursor.execute("SELECT location FROM users WHERE user_id=:uid", {"uid": user_id})
+        result = self.cursor.fetchall()
+        
+        return result
+    
     def add_user(self, user_id, notify_interval, job_key, location):
         """
         Add a user to the database
@@ -92,6 +107,9 @@ class Database(Singleton):
             location: the user's location
         """
         self.cursor.execute("INSERT INTO users VALUES (:uid, :ni, :jk, :l)", {"uid": user_id, "ni": notify_interval, "jk": job_key, "l": location})
+        self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": job_key,"uid": user_id})
+        elf.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
+        
         self.connection.commit()
 
 if __name__ == "__main__":
