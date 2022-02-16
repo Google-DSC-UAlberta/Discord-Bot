@@ -42,13 +42,15 @@ class Database(Singleton):
         );
         
         CREATE TABLE IF NOT EXISTS user_job (
-            job_name CHAR(40),     
+            job_name CHAR(40),  
+            user_id CHAR(40) ,   
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
         );
         
         CREATE TABLE IF NOT EXISTS user_location (
             location CHAR(40),
+            user_id CHAR(40) ,
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
         );
