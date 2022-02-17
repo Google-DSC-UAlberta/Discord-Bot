@@ -66,6 +66,11 @@ class DemoClient(discord.Client):
             await message.reply(random.choices(greetings['Bye'])[0])
         elif content == "db":
             await message.reply(db.check_if_user_exist(message.author.id))
+        elif content == "keywords":
+            if db.check_if_user_exist(message.author.id):
+                await message.reply(db.get_keywords_and_location(message.author.id))
+            else:
+                await message.reply("You haven't registered your job keywords and location yet")
 
 client = DemoClient()
 client.run(TOKEN)

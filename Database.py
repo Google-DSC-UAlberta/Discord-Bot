@@ -111,6 +111,28 @@ class Database(Singleton):
         elf.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
         
         self.connection.commit()
+    
+    def get_keywords_and_location(self, user_id):
+        """
+        Retrieve the job search keywords and location from the user_job table and user_location table
+        Args:
+            user_id: the user's Disccord id
+        Returns:
+            A dictionary with two keys: job_keywords and location. Each key's value is a list.
+        """
+        result = {"job_keywords": [], "location": []}
+        
+        self.cursor.execute("SELECT location FROM user_location WHERE user_id = :uid", {"uid": user_id})
+        locations_info = self.cursor.fetchall()
+        for location_info in locations_info:
+            result["location"].append(location_info[0])
+        
+        self.cursor.execute("SELECT job_name FROM user_job WHERE user_id = :uid", {"uid": user_id})
+        job_keywords_info = self.cursor.fetchall()
+        for job_keyword_info in job_keywords_info:
+            result["job_keywords"].append(job_keyword_info[0])
+        
+        return result
 
 if __name__ == "__main__":
     # a simple test on the Singleton pattern
