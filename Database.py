@@ -162,13 +162,13 @@ class Database(Singleton):
         for job_keyword in job_keywords:
             if len(locations) > 0:
                 for location in locations:
-                    self.cursor.execute("SELECT * FROM jobs WHERE title LIKE :jk AND location LIKE :l", {"jk": "%" + job_keyword + "%", "l": "%" + location + "%"})
+                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%"})
                     result = self.cursor.fetchall()
                     for job in result:
                         jobs.append(job)
             
             else:
-                self.cursor.execute("SELECT * FROM jobs WHERE title LIKE :jk", {"jk": "%" + job_keyword + "%"})
+                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk", {"jk": "%" + job_keyword.lower().split("_")[0] + "%"})
                 result = self.cursor.fetchall()
                 for job in result:
                     jobs.append(job)
@@ -200,7 +200,8 @@ if __name__ == "__main__":
     db.print_tables()
     
     # Testing
-    #print(db.get_jobs(["software"], []))
+    #print(len(db.get_jobs(["software_engineer"], [])))
+    #print(len(db.get_jobs(["software"], [])))
 
 
 
