@@ -25,7 +25,9 @@ class DemoClient(discord.Client):
             "test": "Welcome to UofA GDSC!",
             "code": "```python\n print('showing how python snippets can be displayed on Discord!')```"
         }
+        #use whichever command works with your laptop
         with open('Discord-Bot\greetings.json', 'r') as f:
+        #with open('greetings.json', 'r') as f:
             global greetings
             greetings = json.load(f)
         global db
@@ -66,13 +68,30 @@ class DemoClient(discord.Client):
             await message.reply(random.choices(greetings['Bye'])[0])
         elif content == "db":
             await message.reply(db.check_if_user_exist(message.author.id))
-        elif content == "keywords":
+        elif content.lower() == "jobs":
+            
             if db.check_if_user_exist(message.author.id):
                 keywords_location = db.get_keywords_and_location(message.author.id)
                 jobs = db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
+
+                #Right now there is a 4000 message limit
+                '''
+                job_display = ""
+                for job in jobs:
+                    job_line = f"Title: {job[0]}, Company: {job[1]}, Location: {job[2]}, URL: {job[3]}\n\n"
+                    job_display+=job_line
+                print(f"KEYWORDS LOCATION IS {keywords_location}")
+                print(f"JOBS IS {jobs}")
+                print(db.get_jobs(["software"], ["Edmonton"])) 
+                print(f"JOB DISPLAY {job_display}")
+                '''
+
+                job = jobs[0]
+                await message.reply(f"Title: {job[0]}, Company: {job[1]}, Location: {job[2]}, URL: {job[3]}\n")
+                #await message.reply(job_display)
                 #await message.reply(db.get_keywords_and_location(message.author.id))
             else:
-                await message.reply("You haven't registered your job keywords and location yet")
+                await message.reply(f"You haven't registered your job keywords and location yet, your id is {message.author.id}")
 
 client = DemoClient()
 client.run(TOKEN)

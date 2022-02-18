@@ -175,6 +175,19 @@ class Database(Singleton):
             
         return jobs
 
+    def edit_user(self, user_id, keywords, locations):
+        if (len(keywords) != 0):
+            #keywords not empty
+            self.cursor.execute("UPDATE users SET job_key = ? WHERE user_id = ?;", (keywords[0], user_id))
+            self.connection.commit()
+
+        if (len(locations) != 0):
+            #locations not empty
+            self.cursor.execute("UPDATE users SET location = ? WHERE user_id = ?;", (locations[0], user_id))
+            self.connection.commit()
+
+    
+
 if __name__ == "__main__":
     # a simple test on the Singleton pattern
     # there should be the only instance of the Database class
