@@ -108,7 +108,7 @@ class Database(Singleton):
         """
         self.cursor.execute("INSERT INTO users VALUES (:uid, :ni, :jk, :l)", {"uid": user_id, "ni": notify_interval, "jk": job_key, "l": location})
         self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": job_key,"uid": user_id})
-        elf.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
+        self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
         
         self.connection.commit()
     
@@ -133,6 +133,47 @@ class Database(Singleton):
             result["job_keywords"].append(job_keyword_info[0])
         
         return result
+        
+    def add_job(self, title, company, location, url):
+        """
+        Add a job to the database 
+        Args:
+            title: the job's title
+            company: the job's company
+            location: the job's location
+            url: the job's url
+        """
+        self.cursor.execute("INSERT INTO jobs VALUES(?,?,?,?);", (title, company, location, url))
+        self.connection.commit()
+
+    def get_jobs(self, job_keywords, locations):
+        """
+        Retrieve the jobs from the database
+        Args:
+            job_keywords: the job keywords
+            location: the location
+        Returns:
+            A list of jobs
+        """
+
+        # Get jobs with matching keywords and locations in job_keywords array and locations array
+
+        jobs = []
+        for job_keyword in job_keywords:
+            if len(locations) > 0:
+                for location in locations:
+                    self.cursor.execute("SELECT * FROM jobs WHERE title LIKE :jk AND location LIKE :l", {"jk": "%" + job_keyword + "%", "l": "%" + location + "%"})
+                    result = self.cursor.fetchall()
+                    for job in result:
+                        jobs.append(job)
+            
+            else:
+                self.cursor.execute("SELECT * FROM jobs WHERE title LIKE :jk", {"jk": "%" + job_keyword + "%"})
+                result = self.cursor.fetchall()
+                for job in result:
+                    jobs.append(job)
+            
+        return jobs
 
 if __name__ == "__main__":
     # a simple test on the Singleton pattern
@@ -144,6 +185,9 @@ if __name__ == "__main__":
 
     db.create_tables()
     db.print_tables()
+    
+    # Testing
+    #print(db.get_jobs(["software"], []))
 
 
 

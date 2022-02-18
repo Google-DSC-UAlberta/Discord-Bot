@@ -2,7 +2,9 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from Database import Database
 
+db = Database()
 
 # user define function
 # Scrape the data
@@ -108,3 +110,6 @@ if __name__ == "__main__":
     df['URL'] = job_urls
 
     print(df)
+
+    for index, row in df.iterrows():
+        db.add_job(row['Title'], row['Company'], row['Location'], row['URL'])
