@@ -29,9 +29,7 @@ class Database(Singleton):
         self.cursor.executescript('''
         CREATE TABLE IF NOT EXISTS users (
             user_id CHAR(40) PRIMARY KEY,
-            notify_interval INT,
-            job_key CHAR(40),
-            location CHAR(50)
+            notify_interval INT
         );
 
         CREATE TABLE IF NOT EXISTS jobs ( 
@@ -54,10 +52,7 @@ class Database(Singleton):
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
         );
-        
-        
-        
-        
+
         ''')
 
         self.connection.commit()
@@ -89,26 +84,28 @@ class Database(Singleton):
             user_id: the user's Discord id
         Returns: 
             The location 
-        
         """
         
-        self.cursor.execute("SELECT location FROM users WHERE user_id=:uid", {"uid": user_id})
+        self.cursor.execute("SELECT location FROM user_location WHERE user_id=:uid", {"uid": user_id})
         result = self.cursor.fetchall()
         
         return result
     
-    def add_user(self, user_id, notify_interval, job_key, location):
+    def add_user(self, user_id, notify_interval, keywords, locations):
         """
         Add a user to the database
         Args:
             user_id: the user's Discord id
             notify_interval: the user's notification interval
-            job_key: the user's job keyword
-            location: the user's location
+            keywords: the user's job keyword(s)
+            locations: the user's preferred job location(s)
         """
-        self.cursor.execute("INSERT INTO users VALUES (:uid, :ni, :jk, :l)", {"uid": user_id, "ni": notify_interval, "jk": job_key, "l": location})
-        self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": job_key,"uid": user_id})
-        self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
+        self.cursor.execute("INSERT INTO users VALUES (:uid, :ni)", {"uid": user_id, "ni": notify_interval})
+        
+        for keyword in keywords:
+            self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": keyword,"uid": user_id})
+        for location in locations:
+            self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
         
         self.connection.commit()
     
@@ -178,12 +175,16 @@ class Database(Singleton):
     def edit_user(self, user_id, keywords, locations):
         if (len(keywords) != 0):
             #keywords not empty
-            self.cursor.execute("UPDATE users SET job_key = ? WHERE user_id = ?;", (keywords[0], user_id))
+            self.cursor.execute("DELETE FROM user_job WHERE user_id = :uid", {"uid": user_id})
+            for keyword in keywords:
+                self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": keyword,"uid": user_id})
             self.connection.commit()
 
         if (len(locations) != 0):
             #locations not empty
-            self.cursor.execute("UPDATE users SET location = ? WHERE user_id = ?;", (locations[0], user_id))
+            self.cursor.execute("DELETE FROM user_location WHERE user_id = :uid", {"uid": user_id})
+            for location in locations:
+                self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
             self.connection.commit()
 
     

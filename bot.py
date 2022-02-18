@@ -17,7 +17,7 @@ TOKEN = os.getenv("API_TOKEN")
 
 interval = int(os.getenv("TIMER_INTERVAL"))
 
-class DemoClient(discord.Client):
+class GDSCJobClient(discord.Client):
     def __init__(self):
         super().__init__()
         self.timer_flag = False
@@ -93,5 +93,5 @@ class DemoClient(discord.Client):
             else:
                 await message.reply(f"You haven't registered your job keywords and location yet, your id is {message.author.id}")
 
-client = DemoClient()
+client = GDSCJobClient()
 client.run(TOKEN)
