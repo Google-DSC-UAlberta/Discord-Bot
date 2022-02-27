@@ -1,4 +1,5 @@
 import os
+from tabnanny import check
 
 # https://discordpy.readthedocs.io/en/stable/api.html#
 import discord
@@ -88,7 +89,43 @@ class GDSCJobClient(discord.Client):
                         counter +=1
                 
             else:
-                await message.reply(f"You haven't registered your job keywords and location yet, your id is {message.author.id}")
+                await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
+                embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!jobs Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+                embedVar.add_field(name="Examples", value="`!jobs Software_Engineer / Edmonton Toronto Los_Angeles/ 60\n\n!jobs Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 120`", inline=False)
+                await message.channel.send(embed=embedVar)
+        elif "!jobs" in content.lower():
+            if (content.count('/') != 2):
+                await message.reply("You must use exactly two '/'. Please try again")
+            else:
+                content = content.replace("!jobs", "", 1) # Remove "!jobs"
+                result = content.split('/') # Split them by "/"
+                result = [x.strip() for x in result] # Remove unnecessary whitespace
+                user_jobs = result[0].split() # Split the job keyword(s) by whitespaces
+                user_jobs_results = []
+                for user_job in user_jobs:
+                    user_jobs_results.append(user_job.replace("_", " "))
+
+                user_locations = result[1].split() # Split the locations by whitespaces
+                user_locations_results = [] 
+                for user_location in user_locations:
+                    user_locations_results.append(user_location.replace("_", " "))
+
+                user_notify_interval = int(result[2])
+                
+                self.db.add_user(message.author.id, user_notify_interval, user_jobs_results, user_locations_results) # Write to the db
+
+                if self.db.check_if_user_exist(message.author.id):
+                    # Turn each list into a string and display it to the user
+                    user_jobs_string = ", ".join(user_jobs_results)
+                    user_locations_string = ", ".join(user_locations_results)
+
+                    embedVar = discord.Embed(title="Registration Successful!", color=0x00ff00)
+                    embedVar.add_field(name="Job Keyword(s)", value=user_jobs_string, inline=False)
+                    embedVar.add_field(name="Location(s)", value=user_locations_string, inline=False)
+                    embedVar.add_field(name="Notify Interval (in minutes)", value=user_notify_interval, inline=False)
+                    await message.channel.send(embed=embedVar)
+                else:
+                    await message.reply("Registration unsucccessful. Please try again.")
 
 client = GDSCJobClient()
 client.run(TOKEN)
