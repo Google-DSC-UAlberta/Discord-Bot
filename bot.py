@@ -66,12 +66,29 @@ class GDSCJobClient(discord.Client):
             await message.reply(self.valid_messages[content])
         elif content.lower() == "notify":
             await self.manage_notification(message)
-        elif content.lower() == "hello":
+        elif content.lower() == "hello" or content.lower() == "hi":
             await message.reply(random.choices(greetings['Hello'])[0])
         elif content.lower() == "bye" or content.lower() == "goodbye": 
             await message.reply(random.choices(greetings['Bye'])[0])
+
+        elif content.lower() == "help":
+            await message.reply("Hi, I am GDSC Job Bot!\n" + "I can help you with job postings!\n" +
+            "Type 'register' to view the registration details\n" +
+            "Type 'jobs' to see all the jobs I have based on your preferences\n" +
+            "Type 'notify' to manage notification settings\n" +
+            "Type 'help' to see this message again!")
+
+        elif "how are you" in content.lower():
+            await message.reply(random.choices(greetings['How are you'])[0])
+
         elif content == "db":
             await message.reply(self.db.check_if_user_exist(message.author.id))
+
+        elif content == "register":
+            embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!jobs Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+            embedVar.add_field(name="Examples", value="`!jobs Software_Engineer / Edmonton Toronto Los_Angeles/ 60\n\n!jobs Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 120`", inline=False)
+            await message.channel.send(embed=embedVar)
+
         elif content.lower() == "jobs":
             if self.db.check_if_user_exist(message.author.id):
                 keywords_location = self.db.get_keywords_and_location(message.author.id)
@@ -93,6 +110,7 @@ class GDSCJobClient(discord.Client):
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!jobs Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
                 embedVar.add_field(name="Examples", value="`!jobs Software_Engineer / Edmonton Toronto Los_Angeles/ 60\n\n!jobs Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 120`", inline=False)
                 await message.channel.send(embed=embedVar)
+
         elif "!jobs" in content.lower():
             if (content.count('/') != 2):
                 await message.reply("You must use exactly two '/'. Please try again")

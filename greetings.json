@@ -1,4 +1,5 @@
 {
     "Hello": ["Hello!", "Hey there!", "Hi there!", "It's a pleasure to meet you!", "Welcome to GDSC!"],
-    "Bye": ["Bye!", "See you later!", "Goodbye!", "Have a nice day!"]
+    "Bye": ["Bye!", "See you later!", "Goodbye!", "Have a nice day!"],
+    "How are you": ["I'm fine, thanks! How about you?", "I'm doing great! How about you?", "I'm doing great! Thanks for asking! How about you?"]
 }
