@@ -55,7 +55,7 @@ class GDSCJobClient(discord.Client):
             await message.reply(f"Hi {message.author.name}, you will start being notified for new job postings every {interval} minutes!")
 
     async def on_message(self, message):
-        #self.db.add_user(750798111798067343, 2, ["software"], ["Edmonton"])
+        #self.db.add_user(1234567890, 2, ["software"], ["Edmonton"])
         # a bot message also count as a message, make sure we don't handle bot's messages
         if message.author == self.user:
             return 
