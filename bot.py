@@ -29,6 +29,8 @@ class GDSCJobClient(discord.Client):
             greetings = json.load(f)
         self.db = Database()
         self.tasks = {}
+        
+
     
     async def on_ready(self):
         print(f'{self.user} has connected to Discord!')
@@ -53,6 +55,7 @@ class GDSCJobClient(discord.Client):
             await message.reply(f"Hi {message.author.name}, you will start being notified for new job postings every {interval} minutes!")
 
     async def on_message(self, message):
+        #self.db.add_user(750798111798067343, 2, ["software"], ["Edmonton"])
         # a bot message also count as a message, make sure we don't handle bot's messages
         if message.author == self.user:
             return 
@@ -73,22 +76,17 @@ class GDSCJobClient(discord.Client):
                 keywords_location = self.db.get_keywords_and_location(message.author.id)
                 jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
 
-                #Right now there is a 4000 message limit
-                '''
-                job_display = ""
+                #there is a 4000 message limit
+                limit = 10
+                counter = 0
                 for job in jobs:
-                    job_line = f"Title: {job[0]}, Company: {job[1]}, Location: {job[2]}, URL: {job[3]}\n\n"
-                    job_display+=job_line
-                print(f"KEYWORDS LOCATION IS {keywords_location}")
-                print(f"JOBS IS {jobs}")
-                print(db.get_jobs(["software"], ["Edmonton"])) 
-                print(f"JOB DISPLAY {job_display}")
-                '''
-
-                job = jobs[0]
-                await message.reply(f"Title: {job[0]}, Company: {job[1]}, Location: {job[2]}, URL: {job[3]}\n")
-                #await message.reply(job_display)
-                #await message.reply(db.get_keywords_and_location(message.author.id))
+                    if counter < limit:
+                        embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
+                        embedVar.add_field(name="Company", value=job[1], inline=False)
+                        embedVar.add_field(name="Location", value=job[2], inline=False)
+                        await message.reply(embed=embedVar)
+                        counter +=1
+                
             else:
                 await message.reply(f"You haven't registered your job keywords and location yet, your id is {message.author.id}")
 
