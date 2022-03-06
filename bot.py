@@ -37,8 +37,19 @@ class GDSCJobClient(discord.Client):
         print(f'{self.user} has connected to Discord!')
     
     async def notification(self, message):
-        # TODO: replace with actual job posting
-        await message.reply("Hello World!")
+        keywords_location = self.db.get_keywords_and_location(message.author.id)
+        jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
+
+        #there is a 4000 message limit
+        limit = 10
+        counter = 0
+        for job in jobs:
+            if counter < limit:
+                embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
+                embedVar.add_field(name="Company", value=job[1], inline=False)
+                embedVar.add_field(name="Location", value=job[2], inline=False)
+                await message.reply(embed=embedVar)
+                counter +=1
     
     def task_launcher(self, message, **interval):
         new_task = tasks.loop(**interval)(self.notification)
@@ -46,14 +57,20 @@ class GDSCJobClient(discord.Client):
         new_task.start(message)
     
     async def manage_notification(self, message):
-        # TODO: retrieve interval from database based on message.author.id
-        interval = 1 # in minutes
-        if message.author.id in self.tasks:
-            await message.reply(f"Hi {message.author.name}, You will stop being notified for job postings!")
-            self.tasks[message.author.id].cancel()
+        if self.db.check_if_user_exist(message.author.id):      
+            interval = self.db.get_notify_interval(message.author.id) # in minutes
+            if message.author.id in self.tasks:
+                await message.reply(f"Hi {message.author.name}, You will stop being notified for job postings!")
+                self.tasks[message.author.id].cancel()
+            else:
+                self.task_launcher(message, minutes=interval)
+                await message.reply(f"Hi {message.author.name}, you will start being notified for new job postings every {interval} minutes!")
         else:
-            self.task_launcher(message, minutes=interval)
-            await message.reply(f"Hi {message.author.name}, you will start being notified for new job postings every {interval} minutes!")
+            await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
+            embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore. \
+                                        \nAs for the notification interval, you can be choose to be notified every x amount of week(s)/day(s)/hour(s)/minute(s)", color=0x00ff00)
+            embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+            await message.channel.send(embed=embedVar)
 
     async def on_message(self, message):
         #self.db.add_user(1234567890, 2, ["software"], ["Edmonton"])
@@ -103,7 +120,7 @@ class GDSCJobClient(discord.Client):
             else:
                 await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 60\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 120`", inline=False)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
 
         elif "!register" in content.lower():
@@ -111,7 +128,7 @@ class GDSCJobClient(discord.Client):
             if (content.count('/') != 2):
                 await message.reply("You must use exactly two '/'. Please try again")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 60\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 120`", inline=False)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
             else:
                 content = content.replace("!register", "", 1) # Remove "!register"
@@ -126,9 +143,19 @@ class GDSCJobClient(discord.Client):
                 user_locations_results = [] 
                 for user_location in user_locations:
                     user_locations_results.append(user_location.replace("_", " "))
-
-                user_notify_interval = int(result[2])
                 
+                if (result[2][-1] not in ('w', 'd', 'h', 'm')): # The user doesn't select one of the available options
+                    await message.reply("Error while parsing the notify_interval. Please try again and make sure it is in the correct format.")
+                else: # Convert the time interval into minutes
+                    if (result[2][-1] == 'w'):
+                        user_notify_interval = int(result[2].split('w')[0]) * 10080
+                    elif (result[2][-1] == 'd'):
+                        user_notify_interval = int(result[2].split('d')[0]) * 1440
+                    elif (result[2][-1] == 'h'):
+                        user_notify_interval = int(result[2].split('h')[0]) * 60
+                    elif (result[2][-1] == 'm'):
+                        user_notify_interval = int(result[2].split('m')[0])
+
                 self.db.add_user(message.author.id, user_notify_interval, user_jobs_results, user_locations_results) # Write to the db
 
                 if self.db.check_if_user_exist(message.author.id):

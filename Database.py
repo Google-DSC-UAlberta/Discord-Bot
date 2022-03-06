@@ -187,6 +187,19 @@ class Database(Singleton):
                 self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
             self.connection.commit()
 
+    def get_notify_interval(self, user_id):
+        """
+        Retrieve the notify interval of the user
+        Args:
+            user_id: the user's Discord id
+        Returns: 
+            An integer containing the notify interval (in minutes) 
+        """
+        
+        self.cursor.execute("SELECT notify_interval FROM users WHERE user_id=:uid", {"uid": user_id})
+        result = self.cursor.fetchone()[0]
+        
+        return result    
     
 
 if __name__ == "__main__":
