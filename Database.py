@@ -1,4 +1,5 @@
 import sqlite3
+from encryption import Encryption
 
 class Singleton():
     _instance = None
@@ -17,7 +18,7 @@ class Database(Singleton):
     def __init__(self):
         self.connection = sqlite3.connect("information.db")
         self.cursor = self.connection.cursor()
-
+        self.encryption = Encryption()
     # Destructor
     def __del__(self):
         self.connection.close()
@@ -28,7 +29,7 @@ class Database(Singleton):
         """
         self.cursor.executescript('''
         CREATE TABLE IF NOT EXISTS users (
-            user_id CHAR(40) PRIMARY KEY,
+            user_id TEXT PRIMARY KEY,
             notify_interval INT
         );
 
@@ -41,14 +42,14 @@ class Database(Singleton):
         
         CREATE TABLE IF NOT EXISTS user_job (
             job_name CHAR(40),  
-            user_id CHAR(40) ,   
+            user_id TEXT ,   
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
         );
         
         CREATE TABLE IF NOT EXISTS user_location (
             location CHAR(40),
-            user_id CHAR(40) ,
+            user_id TEXT ,
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
         );
@@ -73,6 +74,7 @@ class Database(Singleton):
         Returns: 
             True if the user is in the database, False otherwise
         """
+        user_id = self.encryption.encrypt(user_id)
         self.cursor.execute("SELECT * FROM users WHERE user_id=:uid", {"uid": user_id})
         result = self.cursor.fetchall()
         return len(result) > 0
@@ -85,7 +87,7 @@ class Database(Singleton):
         Returns: 
             The location 
         """
-        
+        user_id = self.encryption.encrypt(user_id)
         self.cursor.execute("SELECT location FROM user_location WHERE user_id=:uid", {"uid": user_id})
         result = self.cursor.fetchall()
         
@@ -100,6 +102,7 @@ class Database(Singleton):
             keywords: the user's job keyword(s)
             locations: the user's preferred job location(s)
         """
+        user_id = self.encryption.encrypt(user_id)
         self.cursor.execute("INSERT INTO users VALUES (:uid, :ni)", {"uid": user_id, "ni": notify_interval})
         
         for keyword in keywords:
@@ -118,7 +121,8 @@ class Database(Singleton):
             A dictionary with two keys: job_keywords and location. Each key's value is a list.
         """
         result = {"job_keywords": [], "location": []}
-        
+        user_id = self.encryption.encrypt(user_id)
+
         self.cursor.execute("SELECT location FROM user_location WHERE user_id = :uid", {"uid": user_id})
         locations_info = self.cursor.fetchall()
         for location_info in locations_info:
@@ -173,6 +177,7 @@ class Database(Singleton):
         return jobs
 
     def edit_user(self, user_id, keywords, locations):
+        user_id = self.encryption.encrypt(user_id)
         if (len(keywords) != 0):
             #keywords not empty
             self.cursor.execute("DELETE FROM user_job WHERE user_id = :uid", {"uid": user_id})
@@ -195,7 +200,7 @@ class Database(Singleton):
         Returns: 
             An integer containing the notify interval (in minutes) 
         """
-        
+        user_id = self.encryption.encrypt(user_id)
         self.cursor.execute("SELECT notify_interval FROM users WHERE user_id=:uid", {"uid": user_id})
         result = self.cursor.fetchone()[0]
         
