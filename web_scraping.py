@@ -24,7 +24,7 @@ def html_code(url):
     return (soup)
 
 # return job titles from indeed
-def job_title(soup, page):
+def job_title(soup):
     # find all tags with job titles
     parent = soup.find("div", class_ = "mosaic-zone", id  = "mosaic-zone-jobcards")
     titles = parent.findChildren("h2", class_ = ["jobTitle", "jobTitle jobTitle-newJob"])
@@ -36,7 +36,7 @@ def job_title(soup, page):
     return titles
 
 # return company names from indeed
-def company_names(soup,page):
+def company_names(soup):
     # find the Html tag
     # with find()
     # and convert into string
@@ -49,7 +49,7 @@ def company_names(soup,page):
     return names
 
 # return company locations from indeed
-def company_locations(soup,page):
+def company_locations(soup):
     # find the Html tag
     # with find()
     # and convert into string
@@ -62,7 +62,7 @@ def company_locations(soup,page):
     return locations
 
 # return company urls from indeed
-def company_urls(soup,page):
+def company_urls(soup):
     urls = []
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
     tags = parent.findChildren("a", href = True, id = True)
@@ -114,6 +114,16 @@ def company_urls_linkedin(soup):
     
     return urls
 
+def post_dates_linkedin(soup):
+    parent = soup.find("ul", class_ = "jobs-search__results-list")
+    tags = parent.findChildren("time", class_ = "job-search-card__listdate")
+
+    dates = []
+    for date in tags:
+        dates.append(date["datetime"])
+
+    return dates
+
 # driver nodes/main function
 if __name__ == "__main__":
 
@@ -126,6 +136,7 @@ if __name__ == "__main__":
     names_company = []
     locations_company = []
     job_urls = []
+    post_dates = []
     
     # INDEED JOBS
     while True:
@@ -138,7 +149,7 @@ if __name__ == "__main__":
         jobtitles += job_title(soup, page)
         names_company += company_names(soup,page)
         locations_company += company_locations(soup,page)
-        job_urls += company_urls(soup,page)
+        # job_urls += company_urls(soup,page)
         
         page = page + 10
         # get info from the first 5 pages
@@ -152,16 +163,19 @@ if __name__ == "__main__":
     jobtitles += job_title_linkedin(soup)
     names_company += company_names_linkedin(soup)
     locations_company += company_locations_linkedin(soup)
-    job_urls += company_urls_linkedin(soup)
+    # job_urls += company_urls_linkedin(soup)
+    post_dates += post_dates_linkedin(soup)
+
     
     # creating a dataframe with all the information 
     df = pd.DataFrame()
     df['Title'] = jobtitles
     df['Company'] = names_company
     df['Location'] = locations_company
-    df['URL'] = job_urls
+    # df['URL'] = job_urls
+    df['Date'] = post_dates
 
     print(df)
 
-    for index, row in df.iterrows():
-        db.add_job(row['Title'], row['Company'], row['Location'], row['URL'])
+    # for index, row in df.iterrows():
+    #     db.add_job(row['Title'], row['Company'], row['Location'], row['URL'])
