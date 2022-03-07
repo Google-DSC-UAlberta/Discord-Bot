@@ -30,6 +30,8 @@ class GDSCJobClient(discord.Client):
             greetings = json.load(f)
         self.db = Database()
         self.tasks = {}
+        self.counter = 0
+        self.limit = 0
         
 
     
@@ -55,7 +57,7 @@ class GDSCJobClient(discord.Client):
         new_task = tasks.loop(**interval)(self.notification)
         self.tasks[message.author.id] = new_task
         new_task.start(message)
-    
+        
     async def manage_notification(self, message):
         if self.db.check_if_user_exist(message.author.id):      
             interval = self.db.get_notify_interval(message.author.id) # in minutes
@@ -107,21 +109,41 @@ class GDSCJobClient(discord.Client):
                 jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
 
                 #there is a 4000 message limit
-                limit = 10
-                counter = 0
+                self.limit = 10
+                #counter = 0
+                
                 for job in jobs:
-                    if counter < limit:
+                    if self.counter < self.limit:
                         embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
                         embedVar.add_field(name="Company", value=job[1], inline=False)
                         embedVar.add_field(name="Location", value=job[2], inline=False)
                         await message.reply(embed=embedVar)
-                        counter +=1
+                        self.counter +=1
+                   
+                
                 
             else:
                 await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
                 embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
+
+        elif "!next" in content.lower():
+            if self.db.check_if_user_exist(message.author.id):
+                keywords_location = self.db.get_keywords_and_location(message.author.id)
+                jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
+            self.limit+=10
+
+            while self.counter < len(jobs):
+                job = jobs[self.counter]
+                if self.counter < self.limit:
+                    embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
+                    embedVar.add_field(name="Company", value=job[1], inline=False)
+                    embedVar.add_field(name="Location", value=job[2], inline=False)
+                    await message.reply(embed=embedVar)
+                    self.counter +=1
+            
+            #await message.reply(f"counter: {self.counter}")
 
         elif "!register" in content.lower():
 
