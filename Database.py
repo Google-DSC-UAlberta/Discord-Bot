@@ -176,7 +176,7 @@ class Database(Singleton):
             
         return jobs
 
-    def edit_user(self, user_id, keywords, locations):
+    def edit_user(self, user_id, keywords, locations, notify_interval):
         user_id = self.encryption.encrypt(user_id)
         if (len(keywords) != 0):
             #keywords not empty
@@ -191,7 +191,10 @@ class Database(Singleton):
             for location in locations:
                 self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
             self.connection.commit()
-
+        if notify_interval > 0:
+            self.cursor.execute("UPDATE users SET notify_interval = :interval WHERE user_id = :uid", {"interval": notify_interval, "uid": user_id})
+            self.connection.commit()
+            
     def get_notify_interval(self, user_id):
         """
         Retrieve the notify interval of the user
@@ -204,7 +207,7 @@ class Database(Singleton):
         self.cursor.execute("SELECT notify_interval FROM users WHERE user_id=:uid", {"uid": user_id})
         result = self.cursor.fetchone()[0]
         
-        return result    
+        return result
     
 
 if __name__ == "__main__":

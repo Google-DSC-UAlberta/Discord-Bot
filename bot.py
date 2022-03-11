@@ -95,6 +95,8 @@ class GDSCJobClient(discord.Client):
             "Type '!register' to view the registration details and/or register\n" +
             "Type '!jobs' to see all the jobs I have based on your preferences\n" +
             "Type '!notify' to manage notification settings\n" +
+            "Type '!view' to view your current registation\n" +
+            "Type '!modify' to modify your current registration\n" +
             "Type '!help' to see this message again!")
 
         elif "how are you" in content.lower():
@@ -146,52 +148,120 @@ class GDSCJobClient(discord.Client):
             #await message.reply(f"counter: {self.counter}")
 
         elif "!register" in content.lower():
+            if self.db.check_if_user_exist(message.author.id): # Check if the user has already registered
+                await message.reply("You've already registered. Use `!view` to view your registration details and `!modify` to modify.")
+            else:
+                if (content.count('/') != 2):
+                    await message.reply("You must use exactly two '/'. Please try again")
+                    embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+                    embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                    await message.channel.send(embed=embedVar)
+                else:
+                    content = content.replace("!register", "", 1) # Remove "!register"
+                    result = content.split('/') # Split them by "/"
+                    result = [x.strip() for x in result] # Remove unnecessary whitespace
+                    user_jobs = result[0].split() # Split the job keyword(s) by whitespaces
+                    user_jobs_results = []
+                    for user_job in user_jobs:
+                        user_jobs_results.append(user_job.replace("_", " "))
 
-            if (content.count('/') != 2):
-                await message.reply("You must use exactly two '/'. Please try again")
+                    user_locations = result[1].split() # Split the locations by whitespaces
+                    user_locations_results = [] 
+                    for user_location in user_locations:
+                        user_locations_results.append(user_location.replace("_", " "))
+                    
+                    if (result[2][-1] not in ('w', 'd', 'h', 'm')): # The user doesn't select one of the available options
+                        await message.reply("Error while parsing the notify_interval. Please try again and make sure it is in the correct format.")
+                    else: # Convert the time interval into minutes
+                        if (result[2][-1] == 'w'):
+                            user_notify_interval = int(result[2].split('w')[0]) * 10080
+                        elif (result[2][-1] == 'd'):
+                            user_notify_interval = int(result[2].split('d')[0]) * 1440
+                        elif (result[2][-1] == 'h'):
+                            user_notify_interval = int(result[2].split('h')[0]) * 60
+                        elif (result[2][-1] == 'm'):
+                            user_notify_interval = int(result[2].split('m')[0])
+
+                    self.db.add_user(message.author.id, user_notify_interval, user_jobs_results, user_locations_results) # Write to the db
+
+                    if self.db.check_if_user_exist(message.author.id):
+                        # Turn each list into a string and display it to the user
+                        user_jobs_string = ", ".join(user_jobs_results)
+                        user_locations_string = ", ".join(user_locations_results)
+
+                        embedVar = discord.Embed(title="Registration Successful!", color=0x00ff00)
+                        embedVar.add_field(name="Job Keyword(s)", value=user_jobs_string, inline=False)
+                        embedVar.add_field(name="Location(s)", value=user_locations_string, inline=False)
+                        embedVar.add_field(name="Notify Interval (in minutes)", value=user_notify_interval, inline=False)
+                        await message.channel.send(embed=embedVar)
+                    else:
+                        await message.reply("Registration unsucccessful. Please try again.")
+
+        elif "!view" in content.lower():
+            if self.db.check_if_user_exist(message.author.id): # Check if the user has already registered
+                keywords_and_locations = self.db.get_keywords_and_location(message.author.id)
+                embedVar = discord.Embed(title="View your current registration", description="Job keywords: `"+', '.join(keywords_and_locations["job_keywords"])+"`\nLocations: `"+', '.join(keywords_and_locations["location"])+"`\nNotify Interval: Every `"+str(self.db.get_notify_interval(message.author.id))+"` minutes" , color=0x00ff00)
+                embedVar.add_field(name="To modify your registration, use `!modify`. (Note: Modifying your registration will replace your current registration). Examples:", value="`!modify Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!modify Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                await message.channel.send(embed=embedVar)
+
+            else:
+                await message.reply("You must first register before you can view your registration")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
                 embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
-            else:
-                content = content.replace("!register", "", 1) # Remove "!register"
-                result = content.split('/') # Split them by "/"
-                result = [x.strip() for x in result] # Remove unnecessary whitespace
-                user_jobs = result[0].split() # Split the job keyword(s) by whitespaces
-                user_jobs_results = []
-                for user_job in user_jobs:
-                    user_jobs_results.append(user_job.replace("_", " "))
 
-                user_locations = result[1].split() # Split the locations by whitespaces
-                user_locations_results = [] 
-                for user_location in user_locations:
-                    user_locations_results.append(user_location.replace("_", " "))
-                
-                if (result[2][-1] not in ('w', 'd', 'h', 'm')): # The user doesn't select one of the available options
-                    await message.reply("Error while parsing the notify_interval. Please try again and make sure it is in the correct format.")
-                else: # Convert the time interval into minutes
-                    if (result[2][-1] == 'w'):
-                        user_notify_interval = int(result[2].split('w')[0]) * 10080
-                    elif (result[2][-1] == 'd'):
-                        user_notify_interval = int(result[2].split('d')[0]) * 1440
-                    elif (result[2][-1] == 'h'):
-                        user_notify_interval = int(result[2].split('h')[0]) * 60
-                    elif (result[2][-1] == 'm'):
-                        user_notify_interval = int(result[2].split('m')[0])
-
-                self.db.add_user(message.author.id, user_notify_interval, user_jobs_results, user_locations_results) # Write to the db
-
-                if self.db.check_if_user_exist(message.author.id):
-                    # Turn each list into a string and display it to the user
-                    user_jobs_string = ", ".join(user_jobs_results)
-                    user_locations_string = ", ".join(user_locations_results)
-
-                    embedVar = discord.Embed(title="Registration Successful!", color=0x00ff00)
-                    embedVar.add_field(name="Job Keyword(s)", value=user_jobs_string, inline=False)
-                    embedVar.add_field(name="Location(s)", value=user_locations_string, inline=False)
-                    embedVar.add_field(name="Notify Interval (in minutes)", value=user_notify_interval, inline=False)
+        elif "!modify" in content.lower():
+            if self.db.check_if_user_exist(message.author.id): # Check if the user has already registered
+                if (content.count('/') != 2):
+                    await message.reply("You must use exactly two '/'. Please try again")
+                    embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!modify Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+                    embedVar.add_field(name="Examples", value="`!modify Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!modify Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                     await message.channel.send(embed=embedVar)
                 else:
-                    await message.reply("Registration unsucccessful. Please try again.")
+                    content = content.replace("!modify", "", 1) # Remove "!modify"
+                    result = content.split('/') # Split them by "/"
+                    result = [x.strip() for x in result] # Remove unnecessary whitespace
+                    user_jobs = result[0].split() # Split the job keyword(s) by whitespaces
+                    user_jobs_results = []
+                    for user_job in user_jobs:
+                        user_jobs_results.append(user_job.replace("_", " "))
+
+                    user_locations = result[1].split() # Split the locations by whitespaces
+                    user_locations_results = [] 
+                    for user_location in user_locations:
+                        user_locations_results.append(user_location.replace("_", " "))
+                    
+                    if (result[2][-1] not in ('w', 'd', 'h', 'm')): # The user doesn't select one of the available options
+                        await message.reply("Error while parsing the notify_interval. Please try again and make sure it is in the correct format.")
+                    else: # Convert the time interval into minutes
+                        if (result[2][-1] == 'w'):
+                            user_notify_interval = int(result[2].split('w')[0]) * 10080
+                        elif (result[2][-1] == 'd'):
+                            user_notify_interval = int(result[2].split('d')[0]) * 1440
+                        elif (result[2][-1] == 'h'):
+                            user_notify_interval = int(result[2].split('h')[0]) * 60
+                        elif (result[2][-1] == 'm'):
+                            user_notify_interval = int(result[2].split('m')[0])
+
+                    self.db.edit_user(message.author.id, user_jobs_results, user_locations_results, user_notify_interval)
+
+                    if self.db.check_if_user_exist(message.author.id):
+                        # Turn each list into a string and display it to the user
+                        user_jobs_string = ", ".join(user_jobs_results)
+                        user_locations_string = ", ".join(user_locations_results)
+
+                        embedVar = discord.Embed(title="Registration Successful!", color=0x00ff00)
+                        embedVar.add_field(name="Job Keyword(s)", value=user_jobs_string, inline=False)
+                        embedVar.add_field(name="Location(s)", value=user_locations_string, inline=False)
+                        embedVar.add_field(name="Notify Interval (in minutes)", value=user_notify_interval, inline=False)
+                        await message.channel.send(embed=embedVar)
+                    else:
+                        await message.reply("Registration unsucccessful. Please try again.")
+            else:
+                await message.reply("You must first register before you can modify your registration")
+                embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                await message.channel.send(embed=embedVar)
 
 client = GDSCJobClient()
 client.run(TOKEN)
