@@ -1,4 +1,5 @@
 import os
+import re
 from tabnanny import check
 
 # https://discordpy.readthedocs.io/en/stable/api.html#
@@ -40,7 +41,7 @@ class GDSCJobClient(discord.Client):
     
     async def notification(self, message):
         keywords_location = self.db.get_keywords_and_location(message.author.id)
-        jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
+        jobs = self.db.get_jobs(job_keywords=keywords_location['job_keywords'], locations=keywords_location['location'])
 
         #there is a 4000 message limit
         limit = 10
@@ -128,47 +129,27 @@ class GDSCJobClient(discord.Client):
         elif content == "!db":
             await message.reply(self.db.check_if_user_exist(message.author.id))
 
-        elif content.lower() == "!jobs":
-            if self.db.check_if_user_exist(message.author.id):
-                keywords_location = self.db.get_keywords_and_location(message.author.id)
-                jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
-
-                #there is a 4000 message limit
-                self.limit = 10
-                #counter = 0
-                
-                for job in jobs:
-                    if self.counter < self.limit:
+        elif "!jobs" in content.lower():
+            if (any(char.isdigit() for char in content) == False): 
+                await message.reply("You must input a page number. Try '!jobs <page_number>'")
+            else:
+                pg_num = int(re.search(r'\d+', content).group()) #pg number
+                if self.db.check_if_user_exist(message.author.id):
+                    keywords_location = self.db.get_keywords_and_location(message.author.id)
+                    jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'],pg_num)
+                    
+                    for job in jobs:
                         embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
                         embedVar.add_field(name="Company", value=job[1], inline=False)
                         embedVar.add_field(name="Location", value=job[2], inline=False)
                         await message.reply(embed=embedVar)
-                        self.counter +=1
-                   
-                
-                
-            else:
-                await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
-                embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
-                await message.channel.send(embed=embedVar)
+                       
+                else:
+                    await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
+                    embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+                    embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                    await message.channel.send(embed=embedVar)
 
-        elif "!next" in content.lower():
-            if self.db.check_if_user_exist(message.author.id):
-                keywords_location = self.db.get_keywords_and_location(message.author.id)
-                jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'])
-            self.limit+=10
-
-            while self.counter < len(jobs):
-                job = jobs[self.counter]
-                if self.counter < self.limit:
-                    embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
-                    embedVar.add_field(name="Company", value=job[1], inline=False)
-                    embedVar.add_field(name="Location", value=job[2], inline=False)
-                    await message.reply(embed=embedVar)
-                    self.counter +=1
-            
-            #await message.reply(f"counter: {self.counter}")
 
         elif "!register" in content.lower():
             if self.db.check_if_user_exist(message.author.id): # Check if the user has already registered

@@ -147,7 +147,7 @@ class Database(Singleton):
         self.cursor.execute("INSERT INTO jobs VALUES(?,?,?,?);", (title, company, location, url))
         self.connection.commit()
 
-    def get_jobs(self, job_keywords, locations):
+    def get_jobs(self, job_keywords, locations, pg_num):
         """
         Retrieve the jobs from the database
         Args:
@@ -156,20 +156,17 @@ class Database(Singleton):
         Returns:
             A list of jobs
         """
-
-        # Get jobs with matching keywords and locations in job_keywords array and locations array
-
         jobs = []
         for job_keyword in job_keywords:
             if len(locations) > 0:
                 for location in locations:
-                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%"})
+                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%", "o":pg_num*10})
                     result = self.cursor.fetchall()
                     for job in result:
                         jobs.append(job)
             
             else:
-                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk", {"jk": "%" + job_keyword.lower().split("_")[0] + "%"})
+                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "o":pg_num*10})
                 result = self.cursor.fetchall()
                 for job in result:
                     jobs.append(job)
