@@ -142,6 +142,7 @@ class GDSCJobClient(discord.Client):
                         embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
                         embedVar.add_field(name="Company", value=job[1], inline=False)
                         embedVar.add_field(name="Location", value=job[2], inline=False)
+                        embedVar.add_field(name="Date", value=job[4], inline=False)
                         await message.reply(embed=embedVar)
                        
                 else:

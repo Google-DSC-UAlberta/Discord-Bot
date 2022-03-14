@@ -37,7 +37,8 @@ class Database(Singleton):
             title TEXT, 
             company TEXT, 
             location TEXT, 
-            url TEXT
+            url TEXT,
+            Date TEXT
         );
         
         CREATE TABLE IF NOT EXISTS user_job (
@@ -135,7 +136,7 @@ class Database(Singleton):
         
         return result
         
-    def add_job(self, title, company, location, url):
+    def add_job(self, title, company, location, url, date):
         """
         Add a job to the database 
         Args:
@@ -144,7 +145,7 @@ class Database(Singleton):
             location: the job's location
             url: the job's url
         """
-        self.cursor.execute("INSERT INTO jobs VALUES(?,?,?,?);", (title, company, location, url))
+        self.cursor.execute("INSERT INTO jobs VALUES(?,?,?,?,?);", (title, company, location, url, date))
         self.connection.commit()
 
     def get_jobs(self, job_keywords, locations, pg_num):
@@ -160,13 +161,13 @@ class Database(Singleton):
         for job_keyword in job_keywords:
             if len(locations) > 0:
                 for location in locations:
-                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%", "o":pg_num*10})
+                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l ORDER BY date DESC LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%", "o":pg_num*10})
                     result = self.cursor.fetchall()
                     for job in result:
                         jobs.append(job)
             
             else:
-                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "o":pg_num*10})
+                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk ORDER BY date DESC LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "o":pg_num*10})
                 result = self.cursor.fetchall()
                 for job in result:
                     jobs.append(job)
