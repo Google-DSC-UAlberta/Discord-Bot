@@ -54,6 +54,15 @@ def company_data(soup,page):
     return children
 
 
+def date_data(soup,page):
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    children = parent.findChildren("span", class_=["date"])
+
+    # get the text from each job title tag
+    for i in range(len(children)):
+        children[i] = str(page) + " " + children[i].text
+
+    return children
 
 # driver nodes/main function
 if __name__ == "__main__":
@@ -66,6 +75,7 @@ if __name__ == "__main__":
 
     jobs_list = []
     company_list = []
+    date_list = []
     while True:
         # change 'start' every iteration to go to next page
         url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)
@@ -74,14 +84,20 @@ if __name__ == "__main__":
         # append list of jobs per page to jobs_list
         jobs_list.append(job_title(soup, page))
         company_list.append(company_data(soup,page))
+        date_list.append(date_data(soup,page))
         page = page + 10
+
 
         # get info from the first 5 pages
         if page == 50:
-            break  
-        
-    print(jobs_list)
-    print(company_list)
+            break
+    remove_char = ["P","o","s","t","e","d"]
+    for word in date_list:
+        for char in word:
+            print(char)
+    # print(jobs_list)
+    # print(company_list)
+    print(date_list)
 
     # call job and company data
     # and store into it var
