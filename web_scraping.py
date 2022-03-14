@@ -107,7 +107,7 @@ def company_locations_linkedin(soup):
 def company_urls_linkedin(soup):
     urls = []
     parent = soup.find("ul", class_ = "jobs-search__results-list")
-    tags = parent.findChildren("a", class_ = "base-card__full-link", href = True)
+    tags = parent.findChildren("a", attrs={"data-tracking-control-name":"public_jobs_jserp-result_search-card"}, href = True)
 
     for link in tags:
         urls.append(link["href"])
