@@ -1,7 +1,7 @@
 # import module
 import requests
 from bs4 import BeautifulSoup
-
+import datetime
 
 # user define function
 # Scrape the data
@@ -54,13 +54,29 @@ def company_data(soup,page):
     return children
 
 
-def date_data(soup,page):
+def date_data(soup):
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
     children = parent.findChildren("span", class_=["date"])
+    cur_date =  datetime.date.today()
 
     # get the text from each job title tag
     for i in range(len(children)):
-        children[i] = str(page) + " " + children[i].text
+        if "PostedToday" in children[i].text:
+            children[i] = "0"
+        elif "PostedJust posted" in children[i].text:
+            children[i] = "0"
+        elif "EmployerActive " in children[i].text:
+            children[i] = str(children[i].text[15]) + str(children[i].text[16])
+        else:
+            children[i] = str(children[i].text[6]) + str(children[i].text[7])
+        subtract_time = datetime.timedelta(days = int(children[i]))
+        children[i] = (cur_date - subtract_time).strftime("%Y %m %d")
+    #     print(children[i])
+    #     for j in range(len(children[i])):
+    #         if children[i][j].isdigit() == True:
+    #             children[i] = str(children[i][j]) + str(children[i][j])
+    # for i in range(len(children)):
+    #     children[i] =" " + children[i].text
 
     return children
 
@@ -84,7 +100,7 @@ if __name__ == "__main__":
         # append list of jobs per page to jobs_list
         jobs_list.append(job_title(soup, page))
         company_list.append(company_data(soup,page))
-        date_list.append(date_data(soup,page))
+        date_list.append(date_data(soup))
         page = page + 10
 
 
@@ -92,9 +108,6 @@ if __name__ == "__main__":
         if page == 50:
             break
     remove_char = ["P","o","s","t","e","d"]
-    for word in date_list:
-        for char in word:
-            print(char)
     # print(jobs_list)
     # print(company_list)
     print(date_list)
