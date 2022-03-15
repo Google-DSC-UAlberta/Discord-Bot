@@ -1,10 +1,10 @@
 import os
 import re
-from tabnanny import check
 
 # https://discordpy.readthedocs.io/en/stable/api.html#
 import discord
 from discord.ext import tasks
+from discord_components import DiscordComponents, Button
 
 import time
 import asyncio
@@ -31,28 +31,13 @@ class GDSCJobClient(discord.Client):
             greetings = json.load(f)
         self.db = Database()
         self.tasks = {}
-        self.counter = 0
-        self.limit = 0
         
-
-    
     async def on_ready(self):
         print(f'{self.user} has connected to Discord!')
     
     async def notification(self, message):
-        keywords_location = self.db.get_keywords_and_location(message.author.id)
-        jobs = self.db.get_jobs(job_keywords=keywords_location['job_keywords'], locations=keywords_location['location'])
-
-        #there is a 4000 message limit
-        limit = 10
-        counter = 0
-        for job in jobs:
-            if counter < limit:
-                embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
-                embedVar.add_field(name="Company", value=job[1], inline=False)
-                embedVar.add_field(name="Location", value=job[2], inline=False)
-                await message.reply(embed=embedVar)
-                counter +=1
+        embedVar, buttons = await self.manage_job_listings(message.author, 1)
+        await message.reply(embed=embedVar, components=buttons)
     
     def task_launcher(self, message, **interval):
         new_task = tasks.loop(**interval)(self.notification)
@@ -63,11 +48,11 @@ class GDSCJobClient(discord.Client):
         if self.db.check_if_user_exist(message.author.id):      
             interval = self.db.get_notify_interval(message.author.id) # in minutes
             if message.author.id in self.tasks:
-                await message.reply(f"Hi {message.author.name}, You will stop being notified for job postings!")
+                await message.reply(f"Hi <@{message.author.id}>, You will stop being notified for job postings!")
                 self.tasks[message.author.id].cancel()
             else:
                 self.task_launcher(message, minutes=interval)
-                await message.reply(f"Hi {message.author.name}, you will start being notified for new job postings every {interval} minutes!")
+                await message.reply(f"Hi <@{message.author.id}>, you will start being notified for new job postings every {interval} minutes!")
         else:
             await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
             embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore. \
@@ -98,8 +83,55 @@ class GDSCJobClient(discord.Client):
             user_notify_interval = int(result[2].split('m')[0])
         return {"user_jobs_results": user_jobs_results, "user_locations_results": user_locations_results, "user_notify_interval": user_notify_interval}
 
+    async def manage_job_listings(self, author, pg_num):
+        keywords_location = self.db.get_keywords_and_location(author.id)
+        jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'],pg_num)
+        
+        content = ""
+        if len(jobs) == 0:
+            content += "No job data available on this page!"
+        else:
+            # ALTERNATIVE UI
+            embeds = []
+            for idx, job in enumerate(jobs):
+                # ALTERNATIVE UI
+                # embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
+                # embedVar.add_field(name="Company", value=job[1], inline=True)
+                # embedVar.add_field(name="Location", value=job[2], inline=True)
+                # embedVar.add_field(name="Date", value=job[4], inline=True)
+                # embeds.append(embedVar)
+
+                title, company, location, url, date = job
+                content += f"{idx + 1 + (pg_num - 1) * 10}. **{company}** - [**{title}**]({url})\n"
+                content += f"> __Location__: {location} | __Date__: {date}\n\n"
+        
+        embedVar = discord.Embed(title=f"Job Postings for @{author.name}", description=content, color=0x00ff00)
+        embedVar.set_footer(text=f"Page {pg_num}")
+
+        # use 2D array to fit both buttons on the same line
+        buttons = [[]]
+        if pg_num > 1:
+            buttons[0].append(Button(emoji="⬅️" , label = "Previous Page", style=1, id=f"prev-page-{pg_num}"))
+        if len(jobs) > 0:
+            buttons[0].append(Button(emoji="➡️" , label = "Next Page", style=1, id=f"next-page-{pg_num}"))
+        return embedVar, buttons
+
+    async def on_button_click(self, interaction):
+        if not self.db.check_if_user_exist(interaction.author.id):
+            embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore. \
+                                        \nAs for the notification interval, you can be choose to be notified every x amount of week(s)/day(s)/hour(s)/minute(s)", color=0x00ff00)
+            embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+            await interaction.respond(content=f"<@{interaction.author.id}> You haven't registered your job keywords and location yet. Please see the registration details", embed=embedVar, ephemeral=False)
+        elif interaction.custom_id.startswith("next-page"):
+            pg_num = int(interaction.custom_id.split('-')[-1])
+            embedVar, buttons = await self.manage_job_listings(interaction.author, pg_num + 1)
+            await interaction.respond(embed=embedVar, components=buttons, ephemeral=False)
+        elif interaction.custom_id.startswith("prev-page"):
+            pg_num = int(interaction.custom_id.split('-')[-1])
+            embedVar, buttons = await self.manage_job_listings(interaction.author, pg_num - 1)
+            await interaction.respond(embed=embedVar, components=buttons, ephemeral=False)
+
     async def on_message(self, message):
-        #self.db.add_user(1234567890, 2, ["software"], ["Edmonton"])
         # a bot message also count as a message, make sure we don't handle bot's messages
         if message.author == self.user:
             return 
@@ -116,12 +148,12 @@ class GDSCJobClient(discord.Client):
 
         elif content.lower() == "!help":
             await message.reply("Hi, I am GDSC Job Bot!\n" + "I can help you with job postings!\n" +
-            "Type '!register' to view the registration details and/or register\n" +
-            "Type '!jobs' to see all the jobs I have based on your preferences\n" +
-            "Type '!notify' to manage notification settings\n" +
-            "Type '!view' to view your current registation\n" +
-            "Type '!modify' to modify your current registration\n" +
-            "Type '!help' to see this message again!")
+            "Type `!register` to view the registration details and/or register\n" +
+            "Type `!jobs` to see all the jobs I have based on your preferences\n" +
+            "Type `!notify` to manage notification settings\n" +
+            "Type `!view` to view your current registation\n" +
+            "Type `!modify` to modify your current registration\n" +
+            "Type `!help` to see this message again!")
 
         elif "how are you" in content.lower():
             await message.reply(random.choices(greetings['How are you'])[0])
@@ -131,26 +163,18 @@ class GDSCJobClient(discord.Client):
 
         elif "!jobs" in content.lower():
             if (any(char.isdigit() for char in content) == False): 
-                await message.reply("You must input a page number. Try '!jobs <page_number>'")
+                pg_num = 1
             else:
                 pg_num = int(re.search(r'\d+', content).group()) #pg number
-                if self.db.check_if_user_exist(message.author.id):
-                    keywords_location = self.db.get_keywords_and_location(message.author.id)
-                    jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'],pg_num)
-                    
-                    for job in jobs:
-                        embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
-                        embedVar.add_field(name="Company", value=job[1], inline=False)
-                        embedVar.add_field(name="Location", value=job[2], inline=False)
-                        embedVar.add_field(name="Date", value=job[4], inline=False)
-                        await message.reply(embed=embedVar)
-                       
-                else:
-                    await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
-                    embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                    embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
-                    await message.channel.send(embed=embedVar)
 
+            if self.db.check_if_user_exist(message.author.id):
+                embedVar, buttons = await self.manage_job_listings(message.author, pg_num)
+                await message.reply(embed=embedVar, components=buttons)
+            else:
+                await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
+                embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                await message.channel.send(embed=embedVar)
 
         elif "!register" in content.lower():
             if self.db.check_if_user_exist(message.author.id): # Check if the user has already registered
@@ -229,6 +253,7 @@ class GDSCJobClient(discord.Client):
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
                 embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
-
+         
 client = GDSCJobClient()
+DiscordComponents(client)
 client.run(TOKEN)
