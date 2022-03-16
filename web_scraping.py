@@ -39,19 +39,31 @@ def job_title(soup, page):
 # find_all function
 
 
-def company_data(soup,page):
+def company_names_indeed(soup):
     # find the Html tag
     # with find()
     # and convert into string
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
-    children = parent.findChildren("div", class_=["company_location", "company_Info"])
+    names = parent.findChildren("span", class_=["companyName"])
 
-    # get the text from each job title tag
-    for i in range(len(children)):
-        children[i] = str(page) + " " + children[i].text
+    for i in range(len(names)):
+        names[i] = names[i].text
+
+    return names
 
 
-    return children
+def company_locations_indeed(soup):
+    # find the Html tag
+    # with find()
+    # and convert into string
+    #parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    locations = parent.findChildren("div", class_=["companyLocation"])
+
+    for i in range(len(locations)):
+        locations[i] = locations[i].text
+
+    return locations
 
 
 def date_data(soup):
@@ -91,6 +103,7 @@ if __name__ == "__main__":
 
     jobs_list = []
     company_list = []
+    location_list = []
     date_list = []
     while True:
         # change 'start' every iteration to go to next page
@@ -99,7 +112,8 @@ if __name__ == "__main__":
         soup = html_code(url)
         # append list of jobs per page to jobs_list
         jobs_list.append(job_title(soup, page))
-        company_list.append(company_data(soup,page))
+        company_list.append(company_names_indeed(soup))
+        location_list.append(company_locations_indeed(soup))
         date_list.append(date_data(soup))
         page = page + 10
 
@@ -107,9 +121,10 @@ if __name__ == "__main__":
         # get info from the first 5 pages
         if page == 50:
             break
-    remove_char = ["P","o","s","t","e","d"]
-    # print(jobs_list)
-    # print(company_list)
+
+    print(jobs_list)
+    print(company_list)
+    print(location_list)
     print(date_list)
 
     # call job and company data
