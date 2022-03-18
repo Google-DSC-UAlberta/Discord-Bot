@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from Database import Database
+from urllib.parse import quote
 
 db = Database()
 
@@ -123,6 +124,75 @@ def post_dates_linkedin(soup):
         dates.append(date["datetime"])
 
     return dates
+    
+def date_data(soup, page):
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    children = parent.findChildren("span", class_=["date"])
+
+    # get the text from each job title tag
+    for i in range(len(children)):
+        children[i] = str(page) + " " + children[i].text
+
+    return children
+
+def fetch_new_jobs(job_keywords, locations):
+    """
+    Fetch jobs in locations with job_keywords 
+    Args:
+        A list of job keywords and a list of locations
+    """
+
+    # Replace whitespaces with '%20' in job_keywords and locations 
+    job_keywords = list(map(quote, job_keywords))
+    locations = list(map(quote, locations))
+
+    jobtitles = []
+    names_company = []
+    locations_company = []
+    job_urls = []
+    post_dates = []
+
+    for location in locations:
+        for job in job_keywords:
+            
+            # INDEED JOBS
+            for page in range(0, 50, 10):
+                # change 'start' every iteration to go to next page
+                url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)       
+                # get html string 
+                soup = html_code(url)
+
+                # get information on jobs and companies
+                jobtitles += job_title(soup)
+                names_company += company_names(soup)
+                locations_company += company_locations(soup)
+                job_urls += company_urls(soup)
+                post_dates += date_data(soup, page)
+            
+            # LINKEDIN JOBS
+            url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
+            soup = html_code(url)
+
+            jobtitles += job_title_linkedin(soup)
+            names_company += company_names_linkedin(soup)
+            locations_company += company_locations_linkedin(soup)
+            job_urls += company_urls_linkedin(soup)
+            post_dates += post_dates_linkedin(soup)
+
+            #print(post_dates)
+            
+            # creating a dataframe with all the information 
+            df = pd.DataFrame()
+            df['Title'] = jobtitles
+            df['Company'] = names_company
+            df['Location'] = locations_company
+            df['URL'] = job_urls
+            df['Date'] = pd.Series(post_dates)
+
+    print(df)
+
+    for index, row in df.iterrows():
+        db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])
 
 # driver nodes/main function
 if __name__ == "__main__":
@@ -146,10 +216,11 @@ if __name__ == "__main__":
         soup = html_code(url)
 
         # get information on jobs and companies
-        jobtitles += job_title(soup, page)
-        names_company += company_names(soup,page)
-        locations_company += company_locations(soup,page)
-        # job_urls += company_urls(soup,page)
+        jobtitles += job_title(soup)
+        names_company += company_names(soup)
+        locations_company += company_locations(soup)
+        job_urls += company_urls(soup)
+        post_dates += date_data(soup, page)
         
         page = page + 10
         # get info from the first 5 pages
@@ -163,19 +234,20 @@ if __name__ == "__main__":
     jobtitles += job_title_linkedin(soup)
     names_company += company_names_linkedin(soup)
     locations_company += company_locations_linkedin(soup)
-    # job_urls += company_urls_linkedin(soup)
+    job_urls += company_urls_linkedin(soup)
     post_dates += post_dates_linkedin(soup)
 
+    #print(post_dates)
     
     # creating a dataframe with all the information 
     df = pd.DataFrame()
     df['Title'] = jobtitles
     df['Company'] = names_company
     df['Location'] = locations_company
-    # df['URL'] = job_urls
-    df['Date'] = post_dates
+    df['URL'] = job_urls
+    df['Date'] = pd.Series(post_dates)
 
     print(df)
 
-    # for index, row in df.iterrows():
-    #     db.add_job(row['Title'], row['Company'], row['Location'], row['URL'])
+    for index, row in df.iterrows():
+        db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])

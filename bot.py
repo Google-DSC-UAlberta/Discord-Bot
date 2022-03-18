@@ -12,6 +12,7 @@ import json
 import random
 from dotenv import load_dotenv
 from Database import Database
+from web_scraping import fetch_new_jobs
 
 # load the envionment variables from .env file
 load_dotenv()
@@ -82,7 +83,7 @@ class GDSCJobClient(discord.Client):
         elif (result[2][-1] == 'm'):
             user_notify_interval = int(result[2].split('m')[0])
         return {"user_jobs_results": user_jobs_results, "user_locations_results": user_locations_results, "user_notify_interval": user_notify_interval}
-
+    
     async def manage_job_listings(self, author, pg_num):
         keywords_location = self.db.get_keywords_and_location(author.id)
         jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'],pg_num)
@@ -253,6 +254,10 @@ class GDSCJobClient(discord.Client):
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
                 embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
+        elif "!fetch" in content.lower():
+            # fetch_new_jobs is blocking – probably need to change the requests library used in web_scraping.py to aiohttp
+            fetch_new_jobs(["software developer", "software engineer"], ["Edmonton", "Toronto"])
+            await message.reply("Fetched")
          
 client = GDSCJobClient()
 DiscordComponents(client)
