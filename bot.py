@@ -115,6 +115,11 @@ class GDSCJobClient(discord.Client):
             buttons[0].append(Button(emoji="⬅️" , label = "Previous Page", style=1, id=f"prev-page-{pg_num}"))
         if len(jobs) > 0:
             buttons[0].append(Button(emoji="➡️" , label = "Next Page", style=1, id=f"next-page-{pg_num}"))
+        
+        # to avoid empty 2d array error with discord message
+        if len(buttons[0]) == 0:
+            buttons = []
+    
         return embedVar, buttons
 
     async def on_button_click(self, interaction):
@@ -163,9 +168,8 @@ class GDSCJobClient(discord.Client):
             await message.reply(self.db.check_if_user_exist(message.author.id))
 
         elif "!jobs" in content.lower():
-            if (any(char.isdigit() for char in content) == False): 
-                pg_num = 1
-            else:
+            pg_num = 1
+            if (any(char.isdigit() for char in content)): 
                 pg_num = int(re.search(r'\d+', content).group()) #pg number
 
             if self.db.check_if_user_exist(message.author.id):
