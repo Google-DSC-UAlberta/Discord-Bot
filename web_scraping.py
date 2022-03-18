@@ -32,7 +32,11 @@ def job_title(soup):
 
     # get the text from each job title tag
     for i in range(len(titles)):
-        titles[i] = titles[i].text
+        title = titles[i].text
+        if title[0:3] != 'new':
+            titles[i] = title
+        else:
+            titles[i] = title[3:]
     
     return titles
 
