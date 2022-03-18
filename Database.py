@@ -38,7 +38,8 @@ class Database(Singleton):
             company TEXT, 
             location TEXT, 
             url TEXT,
-            Date TEXT
+            Date TEXT,
+            PRIMARY KEY (title, company, location)
         );
         
         CREATE TABLE IF NOT EXISTS user_job (
@@ -145,7 +146,7 @@ class Database(Singleton):
             location: the job's location
             url: the job's url
         """
-        self.cursor.execute("INSERT INTO jobs VALUES(?,?,?,?,?);", (title, company, location, url, date))
+        self.cursor.execute("INSERT OR IGNORE INTO jobs VALUES(?,?,?,?,?);", (title, company, location, url, date))
         self.connection.commit()
 
     def get_jobs(self, job_keywords, locations, pg_num):
@@ -206,6 +207,20 @@ class Database(Singleton):
         result = self.cursor.fetchone()[0]
         
         return result
+
+    def delete_jobs(self):
+        """
+        Delete all jobs from the database
+        """
+        self.cursor.execute("DELETE * FROM jobs")
+        self.connection.commit()
+
+    def delete_old_jobs(self):
+        """
+        Delete old jobs from the database
+        """
+        self.cursor.execute("DELETE FROM jobs WHERE Date < date('now','-180 day')")
+        self.connection.commit()
     
 
 if __name__ == "__main__":
