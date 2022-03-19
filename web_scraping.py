@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from Database import Database
 from urllib.parse import quote
-from selenium import webdriver
 import datetime
 import time
 
