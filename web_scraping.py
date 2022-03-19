@@ -4,13 +4,19 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from Database import Database
 from urllib.parse import quote
+from selenium import webdriver
 import datetime
 import time
 
 db = Database()
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0",
+    "Accept-Encoding": "gzip, deflate", 
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "DNT": "1", 
+    "Connection": "close", 
+    "Upgrade-Insecure-Requests": "1"
 }
 print("user agent: ", headers["User-Agent"])
 
@@ -19,7 +25,6 @@ print("user agent: ", headers["User-Agent"])
 # and get in string
 def getdata(url):
     r = requests.get(url, headers=headers)
-    time.sleep(1)
     return r.text
 
 # Get Html code using parse
@@ -27,6 +32,7 @@ def html_code(url):
     # pass the url
     # into getdata function
     htmldata = getdata(url)
+    print(htmldata)
     soup = BeautifulSoup(htmldata, 'html.parser')
 
     # return html code
