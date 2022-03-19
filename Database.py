@@ -1,5 +1,10 @@
+import psycopg2
 import sqlite3
+import os
 from encryption import Encryption
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Singleton():
     _instance = None
@@ -16,9 +21,16 @@ class Singleton():
 class Database(Singleton):
     # Constructor
     def __init__(self):
-        self.connection = sqlite3.connect("information.db")
+        if os.getenv('MODE') == "production":
+            try:
+                self.connection = psycopg2.connect(os.getenv("DATABASE_URL"))
+            except:
+                raise Exception("Cannot connect to Postgres database")
+        else:
+            self.connection = sqlite3.connect("information.db")
         self.cursor = self.connection.cursor()
         self.encryption = Encryption()
+
     # Destructor
     def __del__(self):
         self.connection.close()
@@ -27,12 +39,13 @@ class Database(Singleton):
         """
         Create the tables for the database
         """
-        self.cursor.executescript('''
+        self.cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id TEXT PRIMARY KEY,
             notify_interval INT
-        );
+        );''')
 
+        self.cursor.execute('''
         CREATE TABLE IF NOT EXISTS jobs ( 
             title TEXT, 
             company TEXT, 
@@ -40,23 +53,23 @@ class Database(Singleton):
             url TEXT,
             Date TEXT,
             PRIMARY KEY (title, company, location)
-        );
+        );''')
         
+        self.cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_job (
             job_name CHAR(40),  
             user_id TEXT ,   
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
-        );
+        );''')
         
+        self.cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_location (
             location CHAR(40),
             user_id TEXT ,
             FOREIGN KEY (user_id)
             REFERENCES users(user_id)
-        );
-
-        ''')
+        );''')
 
         self.connection.commit()
 
@@ -64,7 +77,15 @@ class Database(Singleton):
         """
         Printing all the current tables
         """
-        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        if os.getenv('MODE') == "production":
+            self.cursor.execute("""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema='public'
+                AND table_type='BASE TABLE';
+            """)
+        else:
+            self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         info_display = self.cursor.fetchall()
         print(info_display)
 
