@@ -1,7 +1,3 @@
 #!/bin/bash
-
-if [[ ! -f "information.db" ]]
-then
-    python Database.py
-    python web_scraping.py
-fi
+python Database.py
+python web_scraping.py

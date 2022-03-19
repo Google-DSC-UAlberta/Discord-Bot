@@ -193,11 +193,11 @@ def fetch_new_jobs(job_keywords, locations):
                 soup = html_code(url)
 
                 # get information on jobs and companies
-                jobtitles += job_title(soup)
-                names_company += company_names(soup)
-                locations_company += company_locations(soup)
-                job_urls += company_urls(soup)
-                post_dates += date_data(soup, page)
+                jobtitles += job_title_indeed(soup)
+                names_company += company_names_indeed(soup)
+                locations_company += company_locations_indeed(soup)
+                job_urls += company_urls_indeed(soup)
+                post_dates += date_data_indeed(soup)
             
             # LINKEDIN JOBS
             url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
@@ -246,11 +246,11 @@ if __name__ == "__main__":
         soup = html_code(url)
 
         # get information on jobs and companies
-        jobtitles += job_title(soup)
-        names_company += company_names(soup)
-        locations_company += company_locations(soup)
-        job_urls += company_urls(soup)
-        post_dates += date_data(soup, page)
+        jobtitles += job_title_indeed(soup)
+        names_company += company_names_indeed(soup)
+        locations_company += company_locations_indeed(soup)
+        job_urls += company_urls_indeed(soup)
+        post_dates += date_data_indeed(soup)
         
         page = page + 10
         # get info from the first 5 pages
@@ -261,11 +261,11 @@ if __name__ == "__main__":
     url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
     soup = html_code(url)
 
-    # jobtitles += job_title_linkedin(soup)
-    # names_company += company_names_linkedin(soup)
-    # locations_company += company_locations_linkedin(soup)
-    # job_urls += company_urls_linkedin(soup)
-    # post_dates += post_dates_linkedin(soup)
+    jobtitles += job_title_linkedin(soup)
+    names_company += company_names_linkedin(soup)
+    locations_company += company_locations_linkedin(soup)
+    job_urls += company_urls_linkedin(soup)
+    post_dates += post_dates_linkedin(soup)
 
     #print(post_dates)
     

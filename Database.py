@@ -167,7 +167,14 @@ class Database(Singleton):
             location: the job's location
             url: the job's url
         """
-        self.cursor.execute("INSERT OR IGNORE INTO jobs VALUES(?,?,?,?,?);", (title, company, location, url, date))
+        if os.getenv("MODE") == "production":
+            self.cursor.execute("""
+                INSERT INTO jobs(title, company, location, url, Date)
+                VALUES(%s,%s,%s,%s,%s) 
+                ON CONFLICT(title, company, location) DO NOTHING;
+            """, (title, company, location, url, date))
+        else:
+            self.cursor.execute("INSERT OR IGNORE INTO jobs VALUES(%s,%s,%s,%s,%s);", (title, company, location, url, date))
         self.connection.commit()
 
     def get_jobs(self, job_keywords, locations, pg_num):
