@@ -5,32 +5,21 @@ import pandas as pd
 from Database import Database
 from urllib.parse import quote
 import datetime
+import time
 
 db = Database()
 
 headers = {
-    'cache-control': 'max-age=0',
-    'rtt': '300',
-    'downlink': '1.35',
-    'ect': '3g',
-    'sec-ch-ua': '"Google Chrome"; v="83"',
-    'sec-ch-ua-mobile': '?0',
-    'upgrade-insecure-requests': '1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36',
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'sec-fetch-site': 'none',
-    'sec-fetch-mode': 'navigate',
-    'sec-fetch-user': '?1',
-    'sec-fetch-dest': 'document',
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
 }
-
-print("headers: ", headers)
+print("user agent: ", headers["User-Agent"])
 
 # user define function
 # Scrape the data
 # and get in string
 def getdata(url):
     r = requests.get(url, headers=headers)
+    time.sleep(0.5)
     return r.text
 
 # Get Html code using parse
