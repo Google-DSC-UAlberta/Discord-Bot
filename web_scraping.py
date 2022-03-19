@@ -19,7 +19,7 @@ print("user agent: ", headers["User-Agent"])
 # and get in string
 def getdata(url):
     r = requests.get(url, headers=headers)
-    time.sleep(0.5)
+    time.sleep(1)
     return r.text
 
 # Get Html code using parse
