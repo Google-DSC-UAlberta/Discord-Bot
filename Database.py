@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+IS_PRODUCTION = os.getenv("MODE") == "production"
+
 class Singleton():
     _instance = None
 
@@ -21,7 +23,7 @@ class Singleton():
 class Database(Singleton):
     # Constructor
     def __init__(self):
-        if os.getenv('MODE') == "production":
+        if IS_PRODUCTION:
             try:
                 self.connection = psycopg2.connect(os.getenv("DATABASE_URL"))
             except:
@@ -77,7 +79,7 @@ class Database(Singleton):
         """
         Printing all the current tables
         """
-        if os.getenv('MODE') == "production":
+        if IS_PRODUCTION:
             self.cursor.execute("""
                 SELECT table_name
                 FROM information_schema.tables
@@ -167,7 +169,7 @@ class Database(Singleton):
             location: the job's location
             url: the job's url
         """
-        if os.getenv("MODE") == "production":
+        if IS_PRODUCTION:
             self.cursor.execute("""
                 INSERT INTO jobs(title, company, location, url, Date)
                 VALUES(%s,%s,%s,%s,%s) 
@@ -259,6 +261,10 @@ if __name__ == "__main__":
     test_db = Database()
     assert db is test_db
 
+    if IS_PRODUCTION:
+        print("database is in production mode")
+    else:
+        print("database is in development mode")
     db.create_tables()
     db.print_tables()
     
