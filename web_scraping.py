@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from Database import Database
 from urllib.parse import quote
+import datetime
 
 db = Database()
 
@@ -29,23 +30,20 @@ def html_code(url):
     return (soup)
 
 # return job titles from indeed
-def job_title(soup):
+def job_title_indeed(soup):
     # find all tags with job titles
-    parent = soup.find("div", class_ = "mosaic-zone", id  = "mosaic-zone-jobcards")
-    titles = parent.findChildren("h2", class_ = ["jobTitle", "jobTitle jobTitle-newJob"])
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    titles = parent.findChildren("h2", class_=["jobTitle", "jobTitle jobTitle-newJob"])
 
     # get the text from each job title tag
     for i in range(len(titles)):
-        title = titles[i].text
-        if title[0:3] != 'new':
-            titles[i] = title
-        else:
-            titles[i] = title[3:]
-    
+        titles[i] = titles[i].text
+
     return titles
 
+
 # return company names from indeed
-def company_names(soup):
+def company_names_indeed(soup):
     # find the Html tag
     # with find()
     # and convert into string
@@ -54,32 +52,56 @@ def company_names(soup):
 
     for i in range(len(names)):
         names[i] = names[i].text
-        
+
     return names
 
+
 # return company locations from indeed
-def company_locations(soup):
+def company_locations_indeed(soup):
     # find the Html tag
     # with find()
     # and convert into string
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
-    locations = parent.findChildren("div", class_="companyLocation")
+    locations = parent.findChildren("div", class_=["companyLocation"])
 
     for i in range(len(locations)):
         locations[i] = locations[i].text
-        
+
     return locations
 
+
 # return company urls from indeed
-def company_urls(soup):
+def company_urls_indeed(soup):
     urls = []
     parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
-    tags = parent.findChildren("a", href = True, id = True)
-    
+    tags = parent.findChildren("a", href=True, id=True)
+
     for link in tags:
         urls.append("https://ca.indeed.com" + link["href"])
 
     return urls
+
+
+# return dates of job postings for indeed
+def date_data_indeed(soup):
+    parent = soup.find("div", class_="mosaic-zone", id="mosaic-zone-jobcards")
+    children = parent.findChildren("span", class_=["date"])
+    cur_date = datetime.date.today()
+
+    # get the text from each job title tag
+    for i in range(len(children)):
+        if "PostedToday" in children[i].text:
+            children[i] = "0"
+        elif "PostedJust posted" in children[i].text:
+            children[i] = "0"
+        elif "EmployerActive " in children[i].text:
+            children[i] = str(children[i].text[15]) + str(children[i].text[16])
+        else:
+            children[i] = str(children[i].text[6]) + str(children[i].text[7])
+        subtract_time = datetime.timedelta(days=int(children[i]))
+        children[i] = (cur_date - subtract_time).strftime("%Y %m %d")
+
+    return children
 
 # return job titles from linkedin
 def job_title_linkedin(soup):
