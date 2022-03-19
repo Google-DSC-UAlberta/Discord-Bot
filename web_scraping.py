@@ -7,11 +7,15 @@ from urllib.parse import quote
 
 db = Database()
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0"
+}
+
 # user define function
 # Scrape the data
 # and get in string
 def getdata(url):
-    r = requests.get(url)
+    r = requests.get(url, headers=headers)
     return r.text
 
 # Get Html code using parse
@@ -235,11 +239,11 @@ if __name__ == "__main__":
     url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
     soup = html_code(url)
 
-    jobtitles += job_title_linkedin(soup)
-    names_company += company_names_linkedin(soup)
-    locations_company += company_locations_linkedin(soup)
-    job_urls += company_urls_linkedin(soup)
-    post_dates += post_dates_linkedin(soup)
+    # jobtitles += job_title_linkedin(soup)
+    # names_company += company_names_linkedin(soup)
+    # locations_company += company_locations_linkedin(soup)
+    # job_urls += company_urls_linkedin(soup)
+    # post_dates += post_dates_linkedin(soup)
 
     #print(post_dates)
     
