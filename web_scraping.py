@@ -159,7 +159,9 @@ def post_dates_linkedin(soup):
 
     dates = []
     for date in tags:
-        dates.append(date["datetime"])
+        date = date["datetime"]
+        date = date.replace("-", " ")
+        dates.append(date)
 
     return dates
     
