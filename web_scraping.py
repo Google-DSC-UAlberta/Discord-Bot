@@ -1,5 +1,6 @@
 # import module
-import requests
+import aiohttp
+import asyncio
 from bs4 import BeautifulSoup
 import pandas as pd
 from Database import Database
@@ -22,16 +23,17 @@ print("user agent: ", headers["User-Agent"])
 # user define function
 # Scrape the data
 # and get in string
-def getdata(url):
-    r = requests.get(url, headers=headers)
-    return r.text
+async def getdata(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            text = await response.text()
+            return text
 
 # Get Html code using parse
-def html_code(url):
+async def html_code(url):
     # pass the url
     # into getdata function
-    htmldata = getdata(url)
-    print(htmldata)
+    htmldata = await getdata(url)
     soup = BeautifulSoup(htmldata, 'html.parser')
 
     # return html code
@@ -106,8 +108,11 @@ def date_data_indeed(soup):
             children[i] = str(children[i].text[15]) + str(children[i].text[16])
         else:
             children[i] = str(children[i].text[6]) + str(children[i].text[7])
-        subtract_time = datetime.timedelta(days=int(children[i]))
-        children[i] = (cur_date - subtract_time).strftime("%Y %m %d")
+        try:
+            subtract_time = datetime.timedelta(days=int(children[i]))
+            children[i] = (cur_date - subtract_time).strftime("%Y %m %d")
+        except:
+            children[i] = "Unknown"
 
     return children
 
@@ -175,13 +180,13 @@ def date_data(soup, page):
 
     return children
 
-def fetch_new_jobs(job_keywords, locations):
+async def fetch_new_jobs(job_keywords, locations):
     """
     Fetch jobs in locations with job_keywords 
     Args:
         A list of job keywords and a list of locations
     """
-
+    print("Fetching")
     # Replace whitespaces with '%20' in job_keywords and locations 
     job_keywords = list(map(quote, job_keywords))
     locations = list(map(quote, locations))
@@ -200,7 +205,7 @@ def fetch_new_jobs(job_keywords, locations):
                 # change 'start' every iteration to go to next page
                 url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)       
                 # get html string 
-                soup = html_code(url)
+                soup = await html_code(url)
 
                 # get information on jobs and companies
                 jobtitles += job_title_indeed(soup)
@@ -211,7 +216,7 @@ def fetch_new_jobs(job_keywords, locations):
             
             # LINKEDIN JOBS
             url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
-            soup = html_code(url)
+            soup = await html_code(url)
 
             jobtitles += job_title_linkedin(soup)
             names_company += company_names_linkedin(soup)
@@ -234,9 +239,7 @@ def fetch_new_jobs(job_keywords, locations):
     for index, row in df.iterrows():
         db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])
 
-# driver nodes/main function
-if __name__ == "__main__":
-
+async def main():
     # Data for URL
     job = "software%20developer"
     location = "edmonton"
@@ -253,7 +256,7 @@ if __name__ == "__main__":
         # change 'start' every iteration to go to next page
         url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)       
         # get html string 
-        soup = html_code(url)
+        soup = await html_code(url)
 
         # get information on jobs and companies
         jobtitles += job_title_indeed(soup)
@@ -269,7 +272,7 @@ if __name__ == "__main__":
     
     # LINKEDIN JOBS
     url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
-    soup = html_code(url)
+    soup = await html_code(url)
 
     jobtitles += job_title_linkedin(soup)
     names_company += company_names_linkedin(soup)
@@ -291,3 +294,8 @@ if __name__ == "__main__":
 
     for index, row in df.iterrows():
         db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])
+
+# driver nodes/main function
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

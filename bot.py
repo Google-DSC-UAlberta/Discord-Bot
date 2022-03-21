@@ -259,8 +259,8 @@ class GDSCJobClient(discord.Client):
                 embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
         elif "!fetch" in content.lower():
-            # fetch_new_jobs is blocking – probably need to change the requests library used in web_scraping.py to aiohttp
-            fetch_new_jobs(["software developer", "software engineer"], ["Edmonton", "Toronto"])
+            # TODO: get jobs and locations from user
+            await fetch_new_jobs(["software developer", "software engineer"], ["Edmonton", "Toronto"])
             await message.reply("Fetched")
          
 client = GDSCJobClient()
