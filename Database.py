@@ -192,13 +192,13 @@ class Database(Singleton):
         for job_keyword in job_keywords:
             if len(locations) > 0:
                 for location in locations:
-                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l ORDER BY date DESC LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%", "o":pg_num*10})
+                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l ORDER BY date DESC LIMIT 8 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%", "o":pg_num*8})
                     result = self.cursor.fetchall()
                     for job in result:
                         jobs.append(job)
             
             else:
-                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk ORDER BY date DESC LIMIT 10 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "o":pg_num*10})
+                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk ORDER BY date DESC LIMIT 8 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "o":pg_num*8})
                 result = self.cursor.fetchall()
                 for job in result:
                     jobs.append(job)

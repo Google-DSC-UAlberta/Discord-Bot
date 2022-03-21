@@ -58,7 +58,7 @@ class GDSCJobClient(discord.Client):
             await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
             embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore. \
                                         \nAs for the notification interval, you can be choose to be notified every x amount of week(s)/day(s)/hour(s)/minute(s)", color=0x00ff00)
-            embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+            embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto / 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
             await message.channel.send(embed=embedVar)
 
     async def parse_registration(self, content):
@@ -93,7 +93,7 @@ class GDSCJobClient(discord.Client):
             content += "No job data available on this page!"
         else:
             # ALTERNATIVE UI
-            embeds = []
+            # embeds = []
             for idx, job in enumerate(jobs):
                 # ALTERNATIVE UI
                 # embedVar = discord.Embed(title=job[0], url=job[3], color=0x00ff00)
@@ -103,7 +103,7 @@ class GDSCJobClient(discord.Client):
                 # embeds.append(embedVar)
 
                 title, company, location, url, date = job
-                content += f"{idx + 1 + (pg_num - 1) * 10}. **{company}** - [**{title}**]({url})\n"
+                content += f"{idx + 1 + (pg_num - 1) * 8}. **{company}** - [**{title}**]({url})\n"
                 content += f"> __Location__: {location} | __Date__: {date}\n\n"
         
         embedVar = discord.Embed(title=f"Job Postings for @{author.name}", description=content, color=0x00ff00)
@@ -126,7 +126,7 @@ class GDSCJobClient(discord.Client):
         if not self.db.check_if_user_exist(interaction.author.id):
             embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore. \
                                         \nAs for the notification interval, you can be choose to be notified every x amount of week(s)/day(s)/hour(s)/minute(s)", color=0x00ff00)
-            embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+            embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto / 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
             await interaction.respond(content=f"<@{interaction.author.id}> You haven't registered your job keywords and location yet. Please see the registration details", embed=embedVar, ephemeral=False)
         elif interaction.custom_id.startswith("next-page"):
             pg_num = int(interaction.custom_id.split('-')[-1])
@@ -178,7 +178,7 @@ class GDSCJobClient(discord.Client):
             else:
                 await message.reply(f"You haven't registered your job keywords and location yet. Please see the registration details")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto / 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
 
         elif "!register" in content.lower():
@@ -188,7 +188,7 @@ class GDSCJobClient(discord.Client):
                 if (content.count('/') != 2):
                     await message.reply("You must use exactly two '/'. Please try again")
                     embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                    embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                    embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto / 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                     await message.channel.send(embed=embedVar)
                 else:
                     content = content.replace("!register", "", 1) # Remove "!register"
@@ -216,13 +216,13 @@ class GDSCJobClient(discord.Client):
             if self.db.check_if_user_exist(message.author.id): # Check if the user has already registered
                 keywords_and_locations = self.db.get_keywords_and_location(message.author.id)
                 embedVar = discord.Embed(title="View your current registration", description="Job keywords: `"+', '.join(keywords_and_locations["job_keywords"])+"`\nLocations: `"+', '.join(keywords_and_locations["location"])+"`\nNotify Interval: Every `"+str(self.db.get_notify_interval(message.author.id))+"` minutes" , color=0x00ff00)
-                embedVar.add_field(name="To modify your registration, use `!modify`. (Note: Modifying your registration will replace your current registration). Examples:", value="`!modify Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!modify Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                embedVar.add_field(name="To modify your registration, use `!modify`. (Note: Modifying your registration will replace your current registration). Examples:", value="`!modify Software_Engineer / Edmonton Toronto / 1w\n\n!modify Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
 
             else:
                 await message.reply("You must first register before you can view your registration")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto / 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
 
         elif "!modify" in content.lower():
@@ -230,7 +230,7 @@ class GDSCJobClient(discord.Client):
                 if (content.count('/') != 2):
                     await message.reply("You must use exactly two '/'. Please try again")
                     embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!modify Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                    embedVar.add_field(name="Examples", value="`!modify Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!modify Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                    embedVar.add_field(name="Examples", value="`!modify Software_Engineer / Edmonton Toronto / 1w\n\n!modify Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                     await message.channel.send(embed=embedVar)
                 else:
                     content = content.replace("!modify", "", 1) # Remove "!modify"
@@ -256,7 +256,7 @@ class GDSCJobClient(discord.Client):
             else:
                 await message.reply("You must first register before you can modify your registration")
                 embedVar = discord.Embed(title="Jobs Notification registration instructions", description="The format is `!register Job_Keyword(s)/ Location(s)/ Notification_Interval`. In particular, each job/location is separated by a space and if your job/location contains more than one word, it is separated by an underscore.", color=0x00ff00)
-                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto Los_Angeles/ 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
+                embedVar.add_field(name="Examples", value="`!register Software_Engineer / Edmonton Toronto / 1w\n\n!register Software_Developer Data_Engineer/ Edmonton Vancouver Austin/ 3d`", inline=False)
                 await message.channel.send(embed=embedVar)
         elif "!fetch" in content.lower():
             # TODO: get jobs and locations from user
