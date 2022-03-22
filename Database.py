@@ -37,6 +37,18 @@ class Database(Singleton):
     def __del__(self):
         self.connection.close()
 
+    def execute(self, query, args):
+        """
+        Execute a query, handling syntax conversion from sqlite to postgres
+        This expects the query to use the '?' syntax for placeholder
+        Args:
+            query: the query to execute
+            args: the arguments to the query
+        """
+        if IS_PRODUCTION:
+            query = query.replace("?", "%s")
+        self.cursor.execute(query, args)
+
     def create_tables(self):
         """
         Create the tables for the database
@@ -100,7 +112,7 @@ class Database(Singleton):
             True if the user is in the database, False otherwise
         """
         user_id = self.encryption.encrypt(user_id)
-        self.cursor.execute("SELECT * FROM users WHERE user_id=:uid", {"uid": user_id})
+        self.execute("SELECT * FROM users WHERE user_id=?", (user_id))
         result = self.cursor.fetchall()
         return len(result) > 0
     
@@ -113,7 +125,7 @@ class Database(Singleton):
             The location 
         """
         user_id = self.encryption.encrypt(user_id)
-        self.cursor.execute("SELECT location FROM user_location WHERE user_id=:uid", {"uid": user_id})
+        self.execute("SELECT location FROM user_location WHERE user_id=?", (user_id))
         result = self.cursor.fetchall()
         
         return result
@@ -128,12 +140,12 @@ class Database(Singleton):
             locations: the user's preferred job location(s)
         """
         user_id = self.encryption.encrypt(user_id)
-        self.cursor.execute("INSERT INTO users VALUES (:uid, :ni)", {"uid": user_id, "ni": notify_interval})
+        self.execute("INSERT INTO users VALUES (?, ?)", (user_id, notify_interval))
         
         for keyword in keywords:
-            self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": keyword,"uid": user_id})
+            self.execute("INSERT INTO user_job VALUES (?, ?)", (keyword, user_id))
         for location in locations:
-            self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
+            self.execute("INSERT INTO user_location VALUES (?, ?)", (location, user_id))
         
         self.connection.commit()
     
@@ -144,7 +156,7 @@ class Database(Singleton):
             user_id: the user's Discord id
         """
         user_id = self.encryption.encrypt(user_id)
-        self.cursor.execute("DELETE FROM users WHERE user_id=:uid", {"uid": user_id})
+        self.execute("DELETE FROM users WHERE user_id=?", (user_id))
         self.connection.commit()
 
     def get_keywords_and_location(self, user_id):
@@ -158,12 +170,12 @@ class Database(Singleton):
         result = {"job_keywords": [], "location": []}
         user_id = self.encryption.encrypt(user_id)
 
-        self.cursor.execute("SELECT location FROM user_location WHERE user_id = :uid", {"uid": user_id})
+        self.execute("SELECT location FROM user_location WHERE user_id = ?", (user_id))
         locations_info = self.cursor.fetchall()
         for location_info in locations_info:
             result["location"].append(location_info[0])
         
-        self.cursor.execute("SELECT job_name FROM user_job WHERE user_id = :uid", {"uid": user_id})
+        self.execute("SELECT job_name FROM user_job WHERE user_id = ?", (user_id))
         job_keywords_info = self.cursor.fetchall()
         for job_keyword_info in job_keywords_info:
             result["job_keywords"].append(job_keyword_info[0])
@@ -179,6 +191,7 @@ class Database(Singleton):
             location: the job's location
             url: the job's url
         """
+        # For postgres, the syntax for INSERT IGNORE INTO is slightly different
         if IS_PRODUCTION:
             self.cursor.execute("""
                 INSERT INTO jobs(title, company, location, url, Date)
@@ -202,13 +215,25 @@ class Database(Singleton):
         for job_keyword in job_keywords:
             if len(locations) > 0:
                 for location in locations:
-                    self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk AND LOWER(location) LIKE :l ORDER BY date DESC LIMIT 8 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "l": "%" + location.lower() + "%", "o":pg_num*8})
+                    self.execute("""
+                        SELECT * FROM jobs 
+                        WHERE LOWER(title) LIKE ? AND LOWER(location) LIKE ? 
+                        ORDER BY date DESC 
+                        LIMIT 8 
+                        OFFSET ?
+                    """, ("%" + job_keyword.lower().split("_")[0] + "%", "%" + location.lower() + "%", pg_num*8))
                     result = self.cursor.fetchall()
                     for job in result:
                         jobs.append(job)
             
             else:
-                self.cursor.execute("SELECT * FROM jobs WHERE LOWER(title) LIKE :jk ORDER BY date DESC LIMIT 8 OFFSET :o", {"jk": "%" + job_keyword.lower().split("_")[0] + "%", "o":pg_num*8})
+                self.execute("""
+                    SELECT * FROM jobs 
+                    WHERE LOWER(title) LIKE ?
+                    ORDER BY date DESC 
+                    LIMIT 8 
+                    OFFSET ?
+                """, ("%" + job_keyword.lower().split("_")[0] + "%", pg_num*8))
                 result = self.cursor.fetchall()
                 for job in result:
                     jobs.append(job)
@@ -219,19 +244,19 @@ class Database(Singleton):
         user_id = self.encryption.encrypt(user_id)
         if (len(keywords) != 0):
             #keywords not empty
-            self.cursor.execute("DELETE FROM user_job WHERE user_id = :uid", {"uid": user_id})
+            self.execute("DELETE FROM user_job WHERE user_id = ?", (user_id))
             for keyword in keywords:
-                self.cursor.execute("INSERT INTO user_job VALUES (:jk, :uid)", {"jk": keyword,"uid": user_id})
+                self.execute("INSERT INTO user_job VALUES (?, ?)", (keyword, user_id))
             self.connection.commit()
 
         if (len(locations) != 0):
             #locations not empty
-            self.cursor.execute("DELETE FROM user_location WHERE user_id = :uid", {"uid": user_id})
+            self.execute("DELETE FROM user_location WHERE user_id = ?", (user_id))
             for location in locations:
-                self.cursor.execute("INSERT INTO user_location VALUES (:l, :uid)", {"l": location,"uid": user_id})
+                self.execute("INSERT INTO user_location VALUES (?, ?)", (location, user_id))
             self.connection.commit()
         if notify_interval > 0:
-            self.cursor.execute("UPDATE users SET notify_interval = :interval WHERE user_id = :uid", {"interval": notify_interval, "uid": user_id})
+            self.execute("UPDATE users SET notify_interval = ? WHERE user_id = ?", (notify_interval, user_id))
             self.connection.commit()
             
     def get_notify_interval(self, user_id):
@@ -243,7 +268,7 @@ class Database(Singleton):
             An integer containing the notify interval (in minutes) 
         """
         user_id = self.encryption.encrypt(user_id)
-        self.cursor.execute("SELECT notify_interval FROM users WHERE user_id=:uid", {"uid": user_id})
+        self.execute("SELECT notify_interval FROM users WHERE user_id=?", (user_id))
         result = self.cursor.fetchone()[0]
         
         return result
