@@ -86,6 +86,7 @@ class GDSCJobClient(discord.Client):
     
     async def manage_job_listings(self, author, pg_num):
         keywords_location = self.db.get_keywords_and_location(author.id)
+        print(keywords_location)
         jobs = self.db.get_jobs(keywords_location['job_keywords'], keywords_location['location'],pg_num)
         
         content = ""
@@ -103,7 +104,11 @@ class GDSCJobClient(discord.Client):
                 # embeds.append(embedVar)
 
                 title, company, location, url, date = job
-                content += f"{idx + 1 + (pg_num - 1) * 8}. **{company}** - [**{title}**]({url})\n"
+                # reduce the url length by removing the query params
+                # will only work on LinkedIn urls
+                if url.startswith("https://ca.linkedin.com"):
+                    url = url[0:url.find("?")]
+                content += f"{idx + 1 + (pg_num - 1) * 10}. **{company}** - [**{title}**]({url})\n"
                 content += f"> __Location__: {location} | __Date__: {date}\n\n"
         
         embedVar = discord.Embed(title=f"Job Postings for @{author.name}", description=content, color=0x00ff00)

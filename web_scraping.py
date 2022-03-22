@@ -1,4 +1,5 @@
 # import module
+from xml.sax.handler import feature_external_ges
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
@@ -6,19 +7,8 @@ import pandas as pd
 from Database import Database
 from urllib.parse import quote
 import datetime
-import time
 
 db = Database()
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0",
-    "Accept-Encoding": "gzip, deflate", 
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "DNT": "1", 
-    "Connection": "close", 
-    "Upgrade-Insecure-Requests": "1"
-}
-print("user agent: ", headers["User-Agent"])
 
 # user define function
 # Scrape the data
@@ -47,7 +37,11 @@ def job_title_indeed(soup):
 
     # get the text from each job title tag
     for i in range(len(titles)):
-        titles[i] = titles[i].text
+        title = titles[i].text
+        if title[0:3] != 'new':
+            titles[i] = title
+        else:
+            titles[i] = title[3:]
 
     return titles
 
@@ -241,59 +235,9 @@ async def fetch_new_jobs(job_keywords, locations):
 
 async def main():
     # Data for URL
-    job = "software%20developer"
-    location = "edmonton"
-    page = 0    
-
-    jobtitles = []
-    names_company = []
-    locations_company = []
-    job_urls = []
-    post_dates = []
-    
-    # INDEED JOBS
-    while True:
-        # change 'start' every iteration to go to next page
-        url = "https://ca.indeed.com/jobs?q=" + job + "&l=" + location + "&start=" + str(page)       
-        # get html string 
-        soup = await html_code(url)
-
-        # get information on jobs and companies
-        jobtitles += job_title_indeed(soup)
-        names_company += company_names_indeed(soup)
-        locations_company += company_locations_indeed(soup)
-        job_urls += company_urls_indeed(soup)
-        post_dates += date_data_indeed(soup)
-        
-        page = page + 10
-        # get info from the first 5 pages
-        if page == 50:
-            break  
-    
-    # LINKEDIN JOBS
-    url = "https://www.linkedin.com/jobs/search?keywords=" + job + "&location=" + location
-    soup = await html_code(url)
-
-    jobtitles += job_title_linkedin(soup)
-    names_company += company_names_linkedin(soup)
-    locations_company += company_locations_linkedin(soup)
-    job_urls += company_urls_linkedin(soup)
-    post_dates += post_dates_linkedin(soup)
-
-    #print(post_dates)
-    
-    # creating a dataframe with all the information 
-    df = pd.DataFrame()
-    df['Title'] = jobtitles
-    df['Company'] = names_company
-    df['Location'] = locations_company
-    df['URL'] = job_urls
-    df['Date'] = pd.Series(post_dates)
-
-    print(df)
-
-    for index, row in df.iterrows():
-        db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])
+    jobs = ["software developer", "software engineer"]
+    locations = ["edmonton"]
+    await fetch_new_jobs(jobs, locations)
 
 # driver nodes/main function
 if __name__ == "__main__":
