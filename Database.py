@@ -137,6 +137,16 @@ class Database(Singleton):
         
         self.connection.commit()
     
+    def delete_user(self, user_id):
+        """
+        Delete a user from the database
+        Args:
+            user_id: the user's Discord id
+        """
+        user_id = self.encryption.encrypt(user_id)
+        self.cursor.execute("DELETE FROM users WHERE user_id=:uid", {"uid": user_id})
+        self.connection.commit()
+
     def get_keywords_and_location(self, user_id):
         """
         Retrieve the job search keywords and location from the user_job table and user_location table
