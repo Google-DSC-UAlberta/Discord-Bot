@@ -12,7 +12,7 @@ import json
 import random
 from dotenv import load_dotenv
 from Database import Database
-from web_scraping import fetch_new_jobs
+from web_scraping import fetch_new_jobs, fetch_all_new_jobs
 
 # load the envionment variables from .env file
 load_dotenv()
@@ -30,6 +30,9 @@ class GDSCJobClient(discord.Client):
         with open('greetings.json', 'r') as f:
             global greetings
             greetings = json.load(f)
+        with open('cities.json', 'r') as f:
+            global cities
+            cities = json.load(f)
         self.db = Database()
         self.tasks = {}
         
@@ -266,6 +269,9 @@ class GDSCJobClient(discord.Client):
         elif "!fetch" in content.lower():
             # TODO: get jobs and locations from user
             await fetch_new_jobs(["software developer", "software engineer"], ["Edmonton", "Toronto"])
+            await message.reply("Fetched")
+        elif "!pull" in content.lower(): # Fetch jobs in cities["Canada"]
+            await fetch_all_new_jobs(cities["Canada"])
             await message.reply("Fetched")
         elif content.lower() == "!unregister":
             if self.db.check_if_user_exist(message.author.id):

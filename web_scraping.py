@@ -233,6 +233,63 @@ async def fetch_new_jobs(job_keywords, locations):
     for index, row in df.iterrows():
         db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])
 
+async def fetch_all_new_jobs(locations):
+    """
+    Fetch jobs in locations
+    Args:
+        A list of locations
+    """
+    print("Fetching all jobs")
+    # Replace whitespaces with '%20' in locations 
+    locations = list(map(quote, locations))
+
+    jobtitles = []
+    names_company = []
+    locations_company = []
+    job_urls = []
+    post_dates = []
+
+    for location in locations:     
+        print(location)       
+        # INDEED JOBS
+        for page in range(0, 150, 10):
+            # change 'start' every iteration to go to next page
+            url = "https://ca.indeed.com/jobs?q=&l=" + location + "&start=" + str(page)       
+            # get html string 
+            soup = await html_code(url)
+
+            # get information on jobs and companies
+            jobtitles += job_title_indeed(soup)
+            names_company += company_names_indeed(soup)
+            locations_company += company_locations_indeed(soup)
+            job_urls += company_urls_indeed(soup)
+            post_dates += date_data_indeed(soup)
+        
+        # LINKEDIN JOBS
+        url = "https://www.linkedin.com/jobs/search?keywords=&location=" + location
+        soup = await html_code(url)
+
+        jobtitles += job_title_linkedin(soup)
+        names_company += company_names_linkedin(soup)
+        locations_company += company_locations_linkedin(soup)
+        job_urls += company_urls_linkedin(soup)
+        post_dates += post_dates_linkedin(soup)
+
+        #print(post_dates)
+        
+        # creating a dataframe with all the information 
+        df = pd.DataFrame()
+        df['Title'] = jobtitles
+        df['Company'] = names_company
+        df['Location'] = locations_company
+        df['URL'] = job_urls
+        df['Date'] = pd.Series(post_dates)
+
+    print(df)
+
+    for index, row in df.iterrows():
+        db.add_job(row['Title'], row['Company'], row['Location'], row['URL'], row['Date'])
+
 async def main():
     # Data for URL
     jobs = ["software developer", "software engineer"]
